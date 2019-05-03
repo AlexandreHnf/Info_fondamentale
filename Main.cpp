@@ -59,10 +59,10 @@ void constraintOneZero(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
 			if (capacities[i][j] == 0) { // Mur de capacité 0
-                s.addUnit(~Lit(prop[i+1][j]));
-                s.addUnit(~Lit(prop[i-1][j]));
-                s.addUnit(~Lit(prop[i][j+1]));
-                s.addUnit(~Lit(prop[i][j-1]));
+                s.addUnit(~Lit(prop[i+1+1][j+1]));
+                s.addUnit(~Lit(prop[i-1+1][j+1]));
+                s.addUnit(~Lit(prop[i+1][j+1+1]));
+                s.addUnit(~Lit(prop[i+1][j-1+1]));
 			}
 		}
 	}
