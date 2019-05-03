@@ -18,12 +18,9 @@ Solver s;
  * @param  m: matrix height
  * @param  n: matrix width
  */
-
-
 void pretty_print(int** matrix, int m, int n) {
 	for (int i = 0; i < m; ++i) {
 		for (int j = 0; j < n; ++j) {
-			// std::cout << matrix[i][j] << "\t";
 			if (matrix[i][j] == -1) {
 				std::cout << ("\033[1;37m■\033[0m") << "  ";
 			} else if(matrix[i][j] == 0) {
@@ -39,21 +36,6 @@ void pretty_print(int** matrix, int m, int n) {
 	}
 }
 
-void addUnit(int** prop, int i, int j, bool b){
-	if (b){
-		s.addUnit(Lit(prop[i][j]));
-	} else{
-		s.addUnit(~Lit(prop[i][j]));
-	}
-}
-
-void adjacent(int** prop, int i, int j, bool up, bool down, bool left, bool right){
-	addUnit(prop, i+1, j, down);
-	addUnit(prop, i-1, j, up);
-	addUnit(prop, i, j-1, left);
-	addUnit(prop, i, j+1, right);
-}
-
 bool isWall(int** capacities, int i, int j){
 	return capacities[i][j] == -1 or capacities[i][j] == 0 or capacities[i][j] == 1;
 }
@@ -64,15 +46,6 @@ bool isBorder(int m, int n, int i, int j){
 
 bool isWallOrBorder(int** capacities, int m, int n, int i, int j){
 	return isWall(capacities, i, j) or isBorder(m, n, i, j);
-}
-
-void printProp(int** prop, int m, int n) {
-	FOR(i, 0, m+1) {
-		FOR(j, 0, n+1) {
-			std::cout << prop[i][j] << "  ";
-		}
-		std::cout << "\n";
-	}
 }
 
 // ================================================================================
@@ -86,8 +59,11 @@ void constraintOneZero(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
 			if (capacities[i][j] == 0) { // Mur de capacité 0
-				adjacent(prop, i+1, j+1, false, false, false, false);
-			} 
+                s.addUnit(~Lit(prop[i+1][j]));
+                s.addUnit(~Lit(prop[i-1][j]));
+                s.addUnit(~Lit(prop[i][j+1]));
+             t   s.addUnit(~Lit(prop[i][j-1]));
+			}
 		}
 	}
 }
@@ -136,7 +112,6 @@ void constraintTwo(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
 			if (isWall(capacities, i,j)) {
-				// std::cout << i+1 << " " << j+1 << " ";
 				s.addUnit(~Lit(prop[i+1][j+1]));
 			}
 		}
@@ -251,6 +226,11 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 	 }
 }
 
+
+// ================================================================================
+// =============================== SHOW RESULT ====================================
+// ================================================================================
+
 void showResult(int** capacities, int** prop, int m, int n){
 
 	if (!s.okay()) {
@@ -307,49 +287,23 @@ void solve(int** capacities, int m, int n, bool find_all) {
 		}
 	}
 
-	// ================================================================================
 	// ============================== CONTRAINTE 1 ====================================
-	// =================== Chaque mur a 0 ou 1 ampoule autour =========================
-	// ================================================================================
-
 	 constraintOneZero(capacities, prop, m, n); // [CAPACITE 0]
-
 	 constraintOneOne(capacities, prop, m, n); // [CAPACITE 1]
-
 	
-	// ================================================================================
 	// ============================== CONTRAINTE 2 ====================================
-	// ======================== Pas d'ampoule sur un mur ==============================
-	// ================================================================================
-
-	
 	constraintTwo(capacities, prop, m, n);
 
-	// ================================================================================
 	// ============================== CONTRAINTE 3 ====================================
-	// =================== 2 ampoules ne s'éclairement pas ============================
-	// ================================================================================
-
-	
 	// constraintThreeLign(capacities, prop, m, n); // lignes
-	
 	// constraintThreeCol(capacities, prop, m, n); // colonnes
 
-	// ================================================================================
 	// ============================== CONTRAINTE 4 ====================================
-	// =================== Toutes les cases sont éclairées ============================
-	// ================================================================================
-	
 	constraintFour(capacities, prop, m, n);
 
-	// ================================================================================
-	// ================================================================================
-
-	s.solve(); 
-
+	// ============================ SOLVE ==================================
+	s.solve();
 	showResult(capacities, prop, m, n);
-
-
 }
 
 /**
