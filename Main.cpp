@@ -216,9 +216,8 @@ std::vector<Lit> getHorizontalInterval(int** capacities, int** prop, int i, int 
 		} else break;
 	}
 	std::vector<Lit> res;
-	for (int i = inf_j+1; i <= sup_j-1; ++i){
-		std::cout << i << " ";
-		res.push_back(Lit(prop[i+1][j+1]));
+	for (int z = inf_j+1; z <= sup_j-1; ++z){
+		res.push_back(Lit(prop[i+1][z+1]));
 	}
 	return res;
 }
@@ -238,37 +237,33 @@ std::vector<Lit> getVerticalInterval(int** capacities, int** prop, int i, int j,
 		} else break;
 	}
 	std::vector<Lit> res;
-	for (int i = inf_i+1; i <= sup_i-1; ++i){
-		std::cout << i << " ";
-		res.push_back(Lit(prop[i+1][j+1]));
+	for (int z = inf_i+1; z <= sup_i-1; ++z){
+		res.push_back(Lit(prop[z+1][j+1]));
 	}
 	return res;
 }
 
 void constraintFour(int** capacities, int** prop, int m, int n) {
-	int i = 0;
-	int j = 0;
-	std::vector<Lit> hor = getHorizontalInterval(capacities, prop, i, j, m, n);
-	std::cout << std::endl;
-	std::vector<Lit> vert = getVerticalInterval(capacities, prop, i, j, m, n);
-	std::cout << std::endl;
-	// FOR(i, 0, m-1) {
-	// 	FOR(j, 0, n-1) {
-	// 		if (isWall(capacities, i, j)) { // si c'est un mur, on skip
-	// 			continue;
-	// 		}
-	// 		std::vector<Lit> vert = getVerticalInterval(capacities, prop, i, j, m, n);
-	// 		std::vector<Lit> hor = getHorizontalInterval(capacities, prop, i, j, m, n);
-	// 		vec<Lit> lits;
-	// 		for (Lit lit : vert){
-	// 			lits.push(lit);
-	// 		}
-	// 		for (Lit lit : hor){
-	// 			lits.push(lit);
-	// 		}
-	// 		s.addClause(lits);
-	// 	}
-	// }
+    vec<Lit> lits;
+	 FOR(i, 0, m-1) {
+	 	FOR(j, 0, n-1) {
+	 		if (isWall(capacities, i, j)) { // si c'est un mur, on skip
+	 			continue;
+	 		}
+	 		std::vector<Lit> vert = getVerticalInterval(capacities, prop, i, j, m, n);
+	 		std::vector<Lit> hor = getHorizontalInterval(capacities, prop, i, j, m, n);
+
+	 		lits.clear();
+
+	 		for (Lit lit : vert){
+                lits.push(lit);
+	 		}
+	 		for (Lit lit : hor){
+                lits.push(lit);
+	 		}
+	 		s.addClause(lits);
+	 	}
+	 }
 }
  
 
