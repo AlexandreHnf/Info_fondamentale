@@ -40,12 +40,46 @@ bool isWall(int** capacities, int i, int j){
 	return capacities[i][j] == -1 or capacities[i][j] == 0 or capacities[i][j] == 1;
 }
 
-bool isBorder(int m, int n, int i, int j){
-	return i == 0 or j == 0 or i == m or j == n;
+std::vector<int> getHorizontalInterval(int **capacities, int i, int j, int m, int n) {
+    // get the intervalle in which a cell is
+    int inf_j = j;
+    int sup_j = j;
+    while (inf_j >= 0) { // vers la gauche
+        if (!isWall(capacities, i, inf_j)) { // tant que c'est pas un mur
+            inf_j--;
+        } else break;
+    }
+    while (sup_j <= n-1) { // vers la droite
+        if (!isWall(capacities, i, sup_j)) { // tant que c'est pas un mur
+            sup_j++;
+        } else break;
+    }
+    std::vector<int> res;
+    for (int z = inf_j+1; z <= sup_j-1; ++z){
+        res.push_back(z);
+    }
+    return res;
 }
 
-bool isWallOrBorder(int** capacities, int m, int n, int i, int j){
-	return isWall(capacities, i, j) or isBorder(m, n, i, j);
+std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int n) {
+    // get the intervalle in which a cell is
+    int inf_i = i;
+    int sup_i = i;
+    while (inf_i >= 0) { // vers le haut
+        if (!isWall(capacities, inf_i, j)) { // tant que c'est pas un mur
+            inf_i--;
+        } else break;
+    }
+    while (sup_i <= m-1) { // vers le bas
+        if (!isWall(capacities, sup_i, j)) { // tant que c'est pas un mur
+            sup_i++;
+        } else break;
+    }
+    std::vector<int> res;
+    for (int z = inf_i+1; z <= sup_i-1; ++z){
+        res.push_back(z);
+    }
+    return res;
 }
 
 // ================================================================================
@@ -123,7 +157,32 @@ void constraintTwo(int** capacities, int** prop, int m, int n) {
 // =================== 2 ampoules ne s'éclairement pas ============================
 // ================================================================================
 
-void constraintThreeLign(int** capacities, int** prop, int m, int n) {
+
+void constraintThree(int **capacities, int **prop, int m, int n) {
+    FOR(i, 0, m-1){
+        FOR(j, 0, n-1) {
+            std::vector<int> hor = getHorizontalInterval(capacities, i, j, m, n);
+            if (hor.size() < 2) continue;
+            FOR(k, 0, hor.size()-1){
+                FOR(l, 0, hor.size()-1){
+                    if (k == l) continue;
+                    s.addBinary(~Lit(prop[i+1][hor[k]+1]), ~Lit(prop[i+1][hor[l]+1]));
+                }
+            }
+            std::vector<int> vert = getVerticalInterval(capacities, i, j, m, n);
+            if (vert.size() < 2) continue;
+            FOR(k, 0, vert.size()-1){
+                FOR(l, 0, vert.size()-1){
+                    if (k == l) continue;
+                    s.addBinary(~Lit(prop[vert[k]+1][j+1]), ~Lit(prop[vert[l]+1][j+1]));
+                }
+            }
+        }
+    }
+}
+
+
+void constraintThreeLign2(int** capacities, int** prop, int m, int n) {
 	// lignes
 	FOR(i, 0, m-1){
 		int candidate = 1;
@@ -139,7 +198,7 @@ void constraintThreeLign(int** capacities, int** prop, int m, int n) {
 	}
 }
 
-void constraintThreeCol(int** capacities, int** prop, int m, int n) {
+void constraintThreeCol2(int** capacities, int** prop, int m, int n) {
 	// colonnes
 	FOR(j, 0, m-1){
 		int candidate = 1;
@@ -160,49 +219,6 @@ void constraintThreeCol(int** capacities, int** prop, int m, int n) {
 // =================== Toutes les cases sont éclairées ============================
 // ================================================================================
 
-
-std::vector<Lit> getHorizontalInterval(int** capacities, int** prop, int i, int j, int m, int n) {
-	// get the intervalle in which a cell is
-	int inf_j = j;
-	int sup_j = j;
-	while (inf_j >= 0) { // vers la gauche
-		if (!isWall(capacities, i, inf_j)) { // tant que c'est pas un mur
-			inf_j--;
-		} else break;
-	}
-	while (sup_j <= n-1) { // vers la droite
-		if (!isWall(capacities, i, sup_j)) { // tant que c'est pas un mur
-			sup_j++;
-		} else break;
-	}
-	std::vector<Lit> res;
-	for (int z = inf_j+1; z <= sup_j-1; ++z){
-		res.push_back(Lit(prop[i+1][z+1]));
-	}
-	return res;
-}
-
-std::vector<Lit> getVerticalInterval(int** capacities, int** prop, int i, int j, int m, int n) {
-	// get the intervalle in which a cell is
-	int inf_i = i;
-	int sup_i = i;
-	while (inf_i >= 0) { // vers le haut
-		if (!isWall(capacities, inf_i, j)) { // tant que c'est pas un mur
-			inf_i--;
-		} else break;
-	}
-	while (sup_i <= m-1) { // vers le bas
-		if (!isWall(capacities, sup_i, j)) { // tant que c'est pas un mur
-			sup_i++;
-		} else break;
-	}
-	std::vector<Lit> res;
-	for (int z = inf_i+1; z <= sup_i-1; ++z){
-		res.push_back(Lit(prop[z+1][j+1]));
-	}
-	return res;
-}
-
 void constraintFour(int** capacities, int** prop, int m, int n) {
     vec<Lit> lits;
 	 FOR(i, 0, m-1) {
@@ -210,17 +226,18 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 	 		if (isWall(capacities, i, j)) { // si c'est un mur, on skip
 	 			continue;
 	 		}
-	 		std::vector<Lit> vert = getVerticalInterval(capacities, prop, i, j, m, n);
-	 		std::vector<Lit> hor = getHorizontalInterval(capacities, prop, i, j, m, n);
+
+	 		std::vector<int> vert2 = getVerticalInterval(capacities, i, j, m, n);
+	 		std::vector<int> hor2 = getHorizontalInterval(capacities, i, j, m, n);
 
 	 		lits.clear();
+	 		for (int z : hor2){
+	 		    lits.push(Lit(prop[i+1][z+1]));
+	 		}
+	 		for (int z : vert2){
+	 		    lits.push(Lit(prop[z+1][j+1]));
+	 		}
 
-	 		for (Lit lit : vert){
-                lits.push(lit);
-	 		}
-	 		for (Lit lit : hor){
-                lits.push(lit);
-	 		}
 	 		s.addClause(lits);
 	 	}
 	 }
@@ -295,8 +312,7 @@ void solve(int** capacities, int m, int n, bool find_all) {
 	constraintTwo(capacities, prop, m, n);
 
 	// ============================== CONTRAINTE 3 ====================================
-	// constraintThreeLign(capacities, prop, m, n); // lignes
-	// constraintThreeCol(capacities, prop, m, n); // colonnes
+    constraintThree(capacities, prop, m, n);
 
 	// ============================== CONTRAINTE 4 ====================================
 	constraintFour(capacities, prop, m, n);
