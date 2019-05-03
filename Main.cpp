@@ -142,6 +142,11 @@ void constraintOneOne(int** capacities, int** prop, int m, int n) {
 	std::cout << "fini 1";
 }
 
+// ================================================================================
+// ============================== CONTRAINTE 2 ====================================
+// ======================== Pas d'ampoule sur un mur ==============================
+// ================================================================================
+
 void constraintTwo(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
@@ -153,43 +158,47 @@ void constraintTwo(int** capacities, int** prop, int m, int n) {
 	}
 }
 
+// ================================================================================
+// ============================== CONTRAINTE 3 ====================================
+// =================== 2 ampoules ne s'éclairement pas ============================
+// ================================================================================
+
 void constraintThreeLign(int** capacities, int** prop, int m, int n) {
 	// lignes
-	vec<Lit> lits;
 	FOR(i, 0, m-1){
-		int candidate = j;
-		int j = 1;
-		while (j < n-1) {
-			if (!isWall(capacities[i][j]) and candidate < j) {
-				s.addBinary(Lit(~prop[i+1][candidate]), Lit(~prop[i+1][j+1]));
+		int candidate = 1;
+		int j = 0;
+		while (candidate < n-1) {
+			if (!isWall(capacities, i, candidate) and j < candidate) { // on compare les paires
+				s.addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[i+1][candidate+1])); // -A v -B
 			} else {
-				candidate = j + 1; // après le mur
+				j = candidate + 1; // après le mur : nouveau candidat
 			}
+			candidate++;
 		}
 	}
 }
 
 void constraintThreeCol(int** capacities, int** prop, int m, int n) {
 	// colonnes
-	vec<Lit> lits;
-	FOR(j, 0, n-1){
-		FOR(i, 0, m-1){
-			if (!isWall(capacities, i, j)) {
-				lits.push(~Lit(prop[i+1][j+1]));
-			} else{
-				if (lits.size() > 0) {
-					s.addClause(lits);
-					lits.clear();
-				}
-				s.addUnit(~Lit(prop[i+1][j+1]));
+	FOR(j, 0, m-1){
+		int candidate = 1;
+		int i = 0;
+		while (candidate < m-1) {
+			if (!isWall(capacities, candidate, j) and i < candidate) { // on compare les paires
+				s.addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[candidate+1][j+1])); // -A v -B
+			} else {
+				i = candidate + 1; // après le mur : nouveau candidat
 			}
-		}
-		if (lits.size() > 0) {
-			s.addClause(lits);
-			lits.clear();
+			candidate++;
 		}
 	}
 }
+
+// ================================================================================
+// ============================== CONTRAINTE 4 ====================================
+// =================== Toutes les cases sont éclairées ============================
+// ================================================================================
 
 
 std::vector<Lit> getHorizontalInterval(int** capacities, int** prop, int i, int j, int m, int n) {
@@ -263,6 +272,32 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 }
  
 
+void showResult(int** capacities, int** prop, int m, int n){
+
+	if (!s.okay()) {
+		std::cout << "Il n'y a pas de solution sale pute." << std::endl;
+	}
+	else {
+		std::cout << "La formule est satisfaisable." << std::endl;
+		FOR(i, 0, m-1) {
+			FOR(j, 0, n-1) {
+				if (s.model[prop[i+1][j+1]] == l_True) {
+					std::cout << ("\033[1;33m▲\033[0m") << "  ";
+				} else if (capacities[i][j] == -1){
+					std::cout << ("\033[1;31m■\33[0m") << "  ";
+				} else if (capacities[i][j] == 0) {
+					std::cout << ("\033[1;31m0\033[0m") << "  ";
+				} else if (capacities[i][j] == 1) {
+					std::cout << ("\033[1;31m1\033[0m") << "  ";
+				} else {
+					std::cout << ("\033[1;34m-\033[0m") << "  ";
+				}
+			}
+			std::cout << "\n";
+		}
+	}
+}
+
 
  
 /**
@@ -298,11 +333,9 @@ void solve(int** capacities, int m, int n, bool find_all) {
 	// =================== Chaque mur a 0 ou 1 ampoule autour =========================
 	// ================================================================================
 
-	// [CAPACITE 0]
-	// constraintOneZero(capacities, prop, m, n);
+	// constraintOneZero(capacities, prop, m, n); // [CAPACITE 0]
 
-	// [CAPACITE 1]
-	// constraintOneOne(capacities, prop, m, n);
+	// constraintOneOne(capacities, prop, m, n); // [CAPACITE 1]
 
 	
 	// ================================================================================
@@ -318,29 +351,10 @@ void solve(int** capacities, int m, int n, bool find_all) {
 	// =================== 2 ampoules ne s'éclairement pas ============================
 	// ================================================================================
 
-	// contrainte 3.1 : Lignes
-	/* int j = 0;
-	FOR(i, 0, m-1) {
-		int jprime = 2;
-		while (jprime < n) {
-			if (isWall(capacities, i, jprime) or jprime == n-1) { // soit j' est à un mur soit au bord
-				int l = j;
-				int lprime = 1;
-				while (l < jprime and lprime < jprime) { // l et l' entre j et j'
-					s.addBinary(~Lit(prop[i+1][l]), ~Lit(prop[i+1][lprime]));
-					lprime++;
-				}
-				// on a atteint une borne supérieure, donc borne inf => borne suo
-				j = jprime;
-			}
-			jprime++; // j' + 1
-		}
-	} */
-
-	// lignes
-	// constraintThreeLign(capacities, prop, m, n);
-	// colonnes
-	// constraintThreeCol(capacities, prop, m, n);
+	
+	// constraintThreeLign(capacities, prop, m, n); // lignes
+	
+	// constraintThreeCol(capacities, prop, m, n); // colonnes
 
 	// ================================================================================
 	// ============================== CONTRAINTE 4 ====================================
@@ -349,44 +363,14 @@ void solve(int** capacities, int m, int n, bool find_all) {
 	
 	constraintFour(capacities, prop, m, n);
 
-	// (-A v -B v -C v -D) and 
-
-
 	// ================================================================================
 	// ================================================================================
-
 
 	s.solve(); 
 
-	// showSolve(capacities, prop, m, n);
+	showResult(capacities, prop, m, n);
 
 
-}
-
-void showSolve(int** capacities, int** prop, int m, int n){
-
-	if (!s.okay()) {
-		std::cout << "Il n'y a pas de solution sale pute." << std::endl;
-	}
-	else {
-		std::cout << "La formule est satisfaisable." << std::endl;
-		FOR(i, 0, m-1) {
-			FOR(j, 0, n-1) {
-				if (s.model[prop[i+1][j+1]] == l_True) {
-					std::cout << ("\033[1;33m▲\033[0m") << "  ";
-				} else if (capacities[i][j] == -1){
-					std::cout << ("\033[1;31m■\33[0m") << "  ";
-				} else if (capacities[i][j] == 0) {
-					std::cout << ("\033[1;31m0\033[0m") << "  ";
-				} else if (capacities[i][j] == 1) {
-					std::cout << ("\033[1;31m1\033[0m") << "  ";
-				} else {
-					std::cout << ("\033[1;34m-\033[0m") << "  ";
-				}
-			}
-			std::cout << "\n";
-		}
-	}
 }
 
 /**
