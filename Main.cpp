@@ -3,6 +3,7 @@
  * 
  */
 #include <iostream>
+#include <vector>
 #include <string>
 #include <fstream>
 #include <streambuf>
@@ -23,8 +24,12 @@ void pretty_print(int** matrix, int m, int n) {
 	for (int i = 0; i < m; ++i) {
 		for (int j = 0; j < n; ++j) {
 			// std::cout << matrix[i][j] << "\t";
-			if (matrix[i][j] == -1 or matrix[i][j] == 0 or matrix[i][j] == 1) {
+			if (matrix[i][j] == -1) {
 				std::cout << ("\033[1;37m■\033[0m") << "  ";
+			} else if(matrix[i][j] == 0) {
+				std::cout << ("\033[1;37m0\033[0m") << "  ";
+			} else if (matrix[i][j] == 1) {
+				std::cout << ("\033[1;37m1\033[0m") << "  ";
 			}
 			else if (matrix[i][j] == -2) {
 				std::cout << ("\033[1;30m■\033[0m") << "  ";
@@ -61,10 +66,205 @@ bool isWallOrBorder(int** capacities, int m, int n, int i, int j){
 	return isWall(capacities, i, j) or isBorder(m, n, i, j);
 }
 
-void betweenTwoObstaclesLign(int** prop, int inf, int sup) {
-	
+void printProp(int** prop, int m, int n) {
+	FOR(i, 0, m+1) {
+		FOR(j, 0, n+1) {
+			std::cout << prop[i][j] << "  ";
+		}
+		std::cout << "\n";
+	}
 }
 
+// ================================================================================
+// ============================== CONTRAINTE 1 ====================================
+// =================== Chaque mur a 0 ou 1 ampoule autour =========================
+// ================================================================================
+
+void constraintOneZero(int** capacities, int** prop, int m, int n) {
+	// [CAPACITE 0]
+
+	FOR(i, 0, m-1) {
+		FOR(j, 0, n-1) {
+			if (capacities[i][j] == 0) { // Mur de capacité 0
+				adjacent(prop, i+1, j+1, false, false, false, false);
+			} 
+		}
+	}
+}
+
+void addBinaryNeg(int** prop, int k, int l) {
+	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
+
+
+	std::cout << "k: " << k << ", l: " << l << std::endl;
+	std::cout << "k+1: " << k+1 << ", k-1: " << k-1 <<  std::endl;
+	std::cout << "l+1: "<< l+1 << ", l-1: " << l-1 << std::endl;
+	std::cout << prop[k+1][l] << prop[k][l+1];
+	std::cout << "fdp\n";
+	// s.addBinary(Lit(prop[4][3]), Lit(prop[3][4]));
+	s.addBinary(Lit(~prop[k+1][l]), Lit(~prop[k][l+1])); // (-B v -D)
+	// std::cout << "fdp2\n";
+	// s.addBinary(Lit(~prop[k+1][l]), Lit(~prop[k][l-1])); // (-B v -G)
+	// s.addBinary(Lit(~prop[k+1][l]), Lit(~prop[k-1][l])); // (-B v -H)
+	// s.addBinary(Lit(~prop[k][l+1]), Lit(~prop[k][l-1])); // (-D v -G)
+	// s.addBinary(Lit(~prop[k][l+1]), Lit(~prop[k-1][l])); // (-D v -H)
+	// s.addBinary(Lit(~prop[k][l-1]), Lit(~prop[k-1][l])); // (-G v -H)
+
+	// vec<Lit> lits;
+	// lits.push(Lit(prop[k+1][l]));
+	// lits.push(Lit(prop[k][l+1]));
+	// lits.push(Lit(prop[k][l-1]));
+	// lits.push(Lit(prop[k-1][l]));
+	// s.addClause(lits);
+}
+
+void constraintOneOne(int** capacities, int** prop, int m, int n) {
+	// [CAPACITE 1]
+	// B = i+1, j
+	// H = i-1, j
+	// G = i, j-1
+	// D = i, j+1
+
+	printProp(prop, m, n);
+	std::cout << "nb col: " << prop[0][0] << std::endl;	
+	// std::cout << "nb lignes: " << prop;
+	FOR(i, 0, m-1) {
+		std::cout << "i = " << i << std::endl;
+		FOR(j, 0, n-1) {
+			if (capacities[i][j] == 1) { // Mur de capacité 1
+				// std::cout << i << "," << j;
+				// s.addBinary(Lit(prop[i+1][j+1]), Lit(prop[i+1][j+1]));
+				addBinaryNeg(prop, i+1, j+1);
+
+			}
+		}
+	}
+	std::cout << "fini 1";
+}
+
+void constraintTwo(int** capacities, int** prop, int m, int n) {
+	FOR(i, 0, m-1) {
+		FOR(j, 0, n-1) {
+			if (isWall(capacities, i,j)) {
+				// std::cout << i+1 << " " << j+1 << " ";
+				s.addUnit(~Lit(prop[i+1][j+1]));
+			}
+		}
+	}
+}
+
+void constraintThreeLign(int** capacities, int** prop, int m, int n) {
+	// lignes
+	vec<Lit> lits;
+	FOR(i, 0, m-1){
+		int candidate = j;
+		int j = 1;
+		while (j < n-1) {
+			if (!isWall(capacities[i][j]) and candidate < j) {
+				s.addBinary(Lit(~prop[i+1][candidate]), Lit(~prop[i+1][j+1]));
+			} else {
+				candidate = j + 1; // après le mur
+			}
+		}
+	}
+}
+
+void constraintThreeCol(int** capacities, int** prop, int m, int n) {
+	// colonnes
+	vec<Lit> lits;
+	FOR(j, 0, n-1){
+		FOR(i, 0, m-1){
+			if (!isWall(capacities, i, j)) {
+				lits.push(~Lit(prop[i+1][j+1]));
+			} else{
+				if (lits.size() > 0) {
+					s.addClause(lits);
+					lits.clear();
+				}
+				s.addUnit(~Lit(prop[i+1][j+1]));
+			}
+		}
+		if (lits.size() > 0) {
+			s.addClause(lits);
+			lits.clear();
+		}
+	}
+}
+
+
+std::vector<Lit> getHorizontalInterval(int** capacities, int** prop, int i, int j, int m, int n) {
+	// get the intervalle in which a cell is
+	int inf_j = j;
+	int sup_j = j;
+	while (inf_j >= 0) { // vers la gauche
+		if (!isWall(capacities, i, inf_j)) { // tant que c'est pas un mur
+			inf_j--;
+		} else break;
+	}
+	while (sup_j <= n-1) { // vers la droite
+		if (!isWall(capacities, i, sup_j)) { // tant que c'est pas un mur
+			sup_j++;
+		} else break;
+	}
+	std::vector<Lit> res;
+	for (int i = inf_j+1; i <= sup_j-1; ++i){
+		std::cout << i << " ";
+		res.push_back(Lit(prop[i+1][j+1]));
+	}
+	return res;
+}
+
+std::vector<Lit> getVerticalInterval(int** capacities, int** prop, int i, int j, int m, int n) {
+	// get the intervalle in which a cell is
+	int inf_i = i;
+	int sup_i = i;
+	while (inf_i >= 0) { // vers le haut
+		if (!isWall(capacities, inf_i, j)) { // tant que c'est pas un mur
+			inf_i--;
+		} else break;
+	}
+	while (sup_i <= m-1) { // vers le bas
+		if (!isWall(capacities, sup_i, j)) { // tant que c'est pas un mur
+			sup_i++;
+		} else break;
+	}
+	std::vector<Lit> res;
+	for (int i = inf_i+1; i <= sup_i-1; ++i){
+		std::cout << i << " ";
+		res.push_back(Lit(prop[i+1][j+1]));
+	}
+	return res;
+}
+
+void constraintFour(int** capacities, int** prop, int m, int n) {
+	int i = 0;
+	int j = 0;
+	std::vector<Lit> hor = getHorizontalInterval(capacities, prop, i, j, m, n);
+	std::cout << std::endl;
+	std::vector<Lit> vert = getVerticalInterval(capacities, prop, i, j, m, n);
+	std::cout << std::endl;
+	// FOR(i, 0, m-1) {
+	// 	FOR(j, 0, n-1) {
+	// 		if (isWall(capacities, i, j)) { // si c'est un mur, on skip
+	// 			continue;
+	// 		}
+	// 		std::vector<Lit> vert = getVerticalInterval(capacities, prop, i, j, m, n);
+	// 		std::vector<Lit> hor = getHorizontalInterval(capacities, prop, i, j, m, n);
+	// 		vec<Lit> lits;
+	// 		for (Lit lit : vert){
+	// 			lits.push(lit);
+	// 		}
+	// 		for (Lit lit : hor){
+	// 			lits.push(lit);
+	// 		}
+	// 		s.addClause(lits);
+	// 	}
+	// }
+}
+ 
+
+
+ 
 /**
  * Solves the given light-up instance.
  * @param capacities: instance capacities to solve, an `m` by `n` matrix.
@@ -77,7 +277,7 @@ void solve(int** capacities, int m, int n, bool find_all) {
 	std::cout << std::endl;
 
 	// Fonction à compléter pour les questions 2 et 3 (et bonus 1)
-	vec<Lit> lits;
+
 
 	int** prop = new int*[m+2];
 	for (int i = 0; i < m+2; ++i) {
@@ -87,57 +287,43 @@ void solve(int** capacities, int m, int n, bool find_all) {
 		}
 	}
 
-	FOR(i, 1, m) {
-		FOR(j, 1, n) {
-			prop[i][j] = s.newVar();
-		}
-	}
-
-	// contrainte 1 : Chaque mur a 0 ou 1 ampoule autour de lui
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
-			if (capacities[i][j] == 0){
-				adjacent(prop, i, j, false, false, false, false);
-			} 
+			prop[i+1][j+1] = s.newVar();
 		}
 	}
+
+	// ================================================================================
+	// ============================== CONTRAINTE 1 ====================================
+	// =================== Chaque mur a 0 ou 1 ampoule autour =========================
+	// ================================================================================
+
+	// [CAPACITE 0]
+	// constraintOneZero(capacities, prop, m, n);
+
+	// [CAPACITE 1]
+	// constraintOneOne(capacities, prop, m, n);
 
 	
-	// // contrainte 2
-	/* FOR(i, 0, m) {
-		FOR(j, 0, n) {
-			if (capacities[i][j] == -1) {
-				s.addBinary(~Lit(prop[i][j][AMPOULE]), ~Lit(prop[i][j][MUR]));
-				s.addUnit(~Lit(prop[i][j]));
-			}
-		}
-	}
-	 */
-	// contrainte 3 : 2 ampoules ne s'éclairent pas mutuellement
+	// ================================================================================
+	// ============================== CONTRAINTE 2 ====================================
+	// ======================== Pas d'ampoule sur un mur ==============================
+	// ================================================================================
+
+	
+	constraintTwo(capacities, prop, m, n);
+
+	// ================================================================================
+	// ============================== CONTRAINTE 3 ====================================
+	// =================== 2 ampoules ne s'éclairement pas ============================
+	// ================================================================================
 
 	// contrainte 3.1 : Lignes
-	/* FOR(i, 0, m) {
-		FOR(j, 0, n) {
-			FOR(jprime, j, n) {
-				FOR(l, j, jprime) {
-					s.addTernary(Lit(prop[i][l]), ~Lit(prop[i][j]), Lit(prop[i][jprime]);
-				}
-			}
-		}
-	}
-
-	FOR(i, 0, m) {
-		FOR(j, 0, n) {
-			FOR(jprime, j, n) {
-				if (capacities[i][j] == )
-			}
-		}
-	} */
 	/* int j = 0;
 	FOR(i, 0, m-1) {
 		int jprime = 2;
 		while (jprime < n) {
-			if (isWall(i, jprime) or jprime == n-1) { // soit j' est à un mur soit au bord
+			if (isWall(capacities, i, jprime) or jprime == n-1) { // soit j' est à un mur soit au bord
 				int l = j;
 				int lprime = 1;
 				while (l < jprime and lprime < jprime) { // l et l' entre j et j'
@@ -151,135 +337,56 @@ void solve(int** capacities, int m, int n, bool find_all) {
 		}
 	} */
 
+	// lignes
+	// constraintThreeLign(capacities, prop, m, n);
+	// colonnes
+	// constraintThreeCol(capacities, prop, m, n);
 
+	// ================================================================================
+	// ============================== CONTRAINTE 4 ====================================
+	// =================== Toutes les cases sont éclairées ============================
+	// ================================================================================
 	
+	constraintFour(capacities, prop, m, n);
 
-	// // contrainte 3.2 : Colonnes
-	/* FOR(i, 0, m) {
-		FOR(j, 0, n) {
-			FOR(iprime, i, m) {
-				FOR(l, i, iprime) {
-					s.addTernary(Lit(prop[l][j]), ~Lit(prop[i][j]), Lit(prop[iprime][j]));
-				}
-			}
-		}
-	} */
-
-	// contrainte 4
-
-	// FOR(i, 0, m) {
-	// 	FOR(j, 0, n) {
-	// 		int jprime = j;
-	// 		int iprime = i;
-	// 		FOR(l, j, jprime) {
-	// 			vec<Lit> lits;
-	// 			s.addTernary()
-	// 		}
-	// 		}
-	// 	}
-	// }
-	
-
-	FOR(i, 0, m-1){
-		vec<Lit> lits;
-		std::cout << "OH ";
-		FOR(j, 0, n-1){
-			lits.push(Lit(prop[i+1][j+1]));
-			if (isWall(capacities, i, j)){
-				s.addClause(lits);
-				lits.clear();
-			}
-		}
-		if (lits.size() > 0)
-			s.addClause(lits);
-	}
-/* 
-	FOR(j, 0, n-1){
-		vec<Lit> lits;
-		FOR(i, 0, m-1){
-			lits.push(Lit(prop[i+1][j+1]));
-		}
-		s.addClause(lits);
-	}
- */
-
-	// LIGNES
-	/* j = 0;
-	FOR(i, 0, m-1) {
-		int jprime = 2;
-		while (jprime < n) {
-			if (isWall(i, jprime) or jprime == n-1) { // soit j' est à un mur soit au bord
-				int l = j;
-				while (l < jprime) { // l et l' entre j et j'
-					s.addUnit(Lit(prop[i+1][l]));
-					l++;
-				}
-				// on a atteint une borne supérieure, donc borne inf => borne suo
-				j = jprime;
-			}
-			jprime++; // j' + 1
-		}
-	} */
+	// (-A v -B v -C v -D) and 
 
 
-	/* //  COLONNES
-	int i = 0;
-	FOR(j, 0, n-1) {
-		int iprime = 2;
-		while (iprime < m) {
-			if (isWall(iprime, j) or j == m-1) { // soit i' est à un mur soit au bord
-				int l = i;
-				while (l < iprime) { // l et l' entre i et i'
-					s.addUnit(Lit(prop[l][j+1]));
-					l++;
-				}
-				// on a atteint une borne supérieure, donc borne inf => borne suo
-				i = iprime;
-			}
-			iprime++; // i' + 1
-		}
-	} */
-
-
-
-
-
+	// ================================================================================
+	// ================================================================================
 
 
 	s.solve(); 
 
+	// showSolve(capacities, prop, m, n);
 
 
+}
 
-
-
-
-
-
+void showSolve(int** capacities, int** prop, int m, int n){
 
 	if (!s.okay()) {
-		std::cout << "Il n'y a pas de solution sale pute de chienasse de merde ! NIQUE TA MERE" << std::endl;
+		std::cout << "Il n'y a pas de solution sale pute." << std::endl;
 	}
 	else {
-		std::cout << "La formule est satisfaisable sale PUTASSE YEEEEEEEEEEEEEEEES." << std::endl;
+		std::cout << "La formule est satisfaisable." << std::endl;
 		FOR(i, 0, m-1) {
 			FOR(j, 0, n-1) {
-				if (s.model[prop[i][j]] == l_True) {
-					std::cout << ("\033[1;33mA\033[0m") << "  ";
+				if (s.model[prop[i+1][j+1]] == l_True) {
+					std::cout << ("\033[1;33m▲\033[0m") << "  ";
 				} else if (capacities[i][j] == -1){
-					std::cout << ("\033[1;31m*\033[0m") << "  ";
+					std::cout << ("\033[1;31m■\33[0m") << "  ";
 				} else if (capacities[i][j] == 0) {
 					std::cout << ("\033[1;31m0\033[0m") << "  ";
-				} else if (capacities[i][j] == 0) {
+				} else if (capacities[i][j] == 1) {
 					std::cout << ("\033[1;31m1\033[0m") << "  ";
 				} else {
-					std::cout << ("\033[1;33m.\033[0m") << "  ";
+					std::cout << ("\033[1;34m-\033[0m") << "  ";
 				}
 			}
 			std::cout << "\n";
 		}
 	}
-
 }
 
 /**
