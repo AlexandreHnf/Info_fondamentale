@@ -93,29 +93,22 @@ void constraintOneZero(int** capacities, int** prop, int m, int n) {
 }
 
 void addBinaryNeg(int** prop, int k, int l) {
+    // (H && ~B && ~G && ~D) || (~H && B && ~G && ~D) || (~H && ~B && G && ~D) || (~H && ~B && ~G && D)
+	//                                  est équivalent à
 	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
 
+	 s.addBinary(~Lit(prop[k+1][l]), ~Lit(prop[k][l-1])); // (-B v -G)
+	 s.addBinary(~Lit(prop[k+1][l]), ~Lit(prop[k-1][l])); // (-B v -H)
+	 s.addBinary(~Lit(prop[k][l+1]), ~Lit(prop[k][l-1])); // (-D v -G)
+	 s.addBinary(~Lit(prop[k][l+1]), ~Lit(prop[k-1][l])); // (-D v -H)
+	 s.addBinary(~Lit(prop[k][l-1]), ~Lit(prop[k-1][l])); // (-G v -H)
 
-	std::cout << "k: " << k << ", l: " << l << std::endl;
-	std::cout << "k+1: " << k+1 << ", k-1: " << k-1 <<  std::endl;
-	std::cout << "l+1: "<< l+1 << ", l-1: " << l-1 << std::endl;
-	std::cout << prop[k+1][l] << prop[k][l+1];
-	std::cout << "fdp\n";
-	// s.addBinary(Lit(prop[4][3]), Lit(prop[3][4]));
-	s.addBinary(Lit(~prop[k+1][l]), Lit(~prop[k][l+1])); // (-B v -D)
-	// std::cout << "fdp2\n";
-	// s.addBinary(Lit(~prop[k+1][l]), Lit(~prop[k][l-1])); // (-B v -G)
-	// s.addBinary(Lit(~prop[k+1][l]), Lit(~prop[k-1][l])); // (-B v -H)
-	// s.addBinary(Lit(~prop[k][l+1]), Lit(~prop[k][l-1])); // (-D v -G)
-	// s.addBinary(Lit(~prop[k][l+1]), Lit(~prop[k-1][l])); // (-D v -H)
-	// s.addBinary(Lit(~prop[k][l-1]), Lit(~prop[k-1][l])); // (-G v -H)
-
-	// vec<Lit> lits;
-	// lits.push(Lit(prop[k+1][l]));
-	// lits.push(Lit(prop[k][l+1]));
-	// lits.push(Lit(prop[k][l-1]));
-	// lits.push(Lit(prop[k-1][l]));
-	// s.addClause(lits);
+	 vec<Lit> lits;
+	 lits.push(Lit(prop[k+1][l]));
+	 lits.push(Lit(prop[k][l+1]));
+	 lits.push(Lit(prop[k][l-1]));
+	 lits.push(Lit(prop[k-1][l]));
+	 s.addClause(lits);
 }
 
 void constraintOneOne(int** capacities, int** prop, int m, int n) {
@@ -125,21 +118,13 @@ void constraintOneOne(int** capacities, int** prop, int m, int n) {
 	// G = i, j-1
 	// D = i, j+1
 
-	printProp(prop, m, n);
-	std::cout << "nb col: " << prop[0][0] << std::endl;	
-	// std::cout << "nb lignes: " << prop;
 	FOR(i, 0, m-1) {
-		std::cout << "i = " << i << std::endl;
 		FOR(j, 0, n-1) {
 			if (capacities[i][j] == 1) { // Mur de capacité 1
-				// std::cout << i << "," << j;
-				// s.addBinary(Lit(prop[i+1][j+1]), Lit(prop[i+1][j+1]));
 				addBinaryNeg(prop, i+1, j+1);
-
 			}
 		}
 	}
-	std::cout << "fini 1";
 }
 
 // ================================================================================
@@ -265,7 +250,6 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 	 	}
 	 }
 }
- 
 
 void showResult(int** capacities, int** prop, int m, int n){
 
@@ -328,9 +312,9 @@ void solve(int** capacities, int m, int n, bool find_all) {
 	// =================== Chaque mur a 0 ou 1 ampoule autour =========================
 	// ================================================================================
 
-	// constraintOneZero(capacities, prop, m, n); // [CAPACITE 0]
+	 constraintOneZero(capacities, prop, m, n); // [CAPACITE 0]
 
-	// constraintOneOne(capacities, prop, m, n); // [CAPACITE 1]
+	 constraintOneOne(capacities, prop, m, n); // [CAPACITE 1]
 
 	
 	// ================================================================================
