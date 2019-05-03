@@ -62,7 +62,7 @@ void constraintOneZero(int** capacities, int** prop, int m, int n) {
                 s.addUnit(~Lit(prop[i+1][j]));
                 s.addUnit(~Lit(prop[i-1][j]));
                 s.addUnit(~Lit(prop[i][j+1]));
-             t   s.addUnit(~Lit(prop[i][j-1]));
+                s.addUnit(~Lit(prop[i][j-1]));
 			}
 		}
 	}
