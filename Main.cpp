@@ -67,10 +67,10 @@ std::vector<int> getHorizontalInterval(int **capacities, int i, int j, int m, in
         } else break;
     }
     std::vector<int> res;
-	std::cout << "interval horizontal pour" << i <<"," <<j << "\n";
+	// std::cout << "interval horizontal pour" << i <<"," <<j << "\n";
     for (int z = inf_j+1; z <= sup_j-1; ++z){
         res.push_back(z);
-		std::cout << z << ",";
+		// std::cout << z << ",";
     }
 	std::cout << std::endl;
     return res;
@@ -91,10 +91,10 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
         } else break;
     }
     std::vector<int> res;
-	std::cout << "interval vertical pour " << i <<"," <<j << "\n";
+	// std::cout << "interval vertical pour " << i <<"," <<j << "\n";
     for (int z = inf_i+1; z <= sup_i-1; ++z){
         res.push_back(z);
-		std::cout << z << ",";
+		// std::cout << z << ",";
     }
 	std::cout << std::endl;
     return res;
@@ -104,12 +104,15 @@ std::vector<int> getIJFromLit(const Lit& p){
 	// std::cout << var(p);
     if (sign(p))
         std::cout << "-";
-    std::cout << var(p)/M << var(p)%M;
-    return std::vector<int> {var(p)/M , var(p)%M};
+    int j = (var(p)%N) +1 ;
+    int i = (var(p) - j ) / M + 1;
+    std::cout << i << j;
+    return std::vector<int> {i, j};
 }
 
 void addUnit(Lit p){
-    s.addUnit(p);
+	std::cout << "["<<var(p)<<"]";
+    s.addUnit(p); 
     getIJFromLit(p);
     std::cout << std::endl;
 }
@@ -149,7 +152,7 @@ void addClause(const vec<Lit>& ps){
 
 void constraintOneZero(int** prop, int i, int j) {
 	// [CAPACITE 0]
-	// std::cout << "ij: " << i-1 << ", " << j-1;
+	std::cout << "ij: " << i-1 << ", " << j-1;
 	addUnit(~Lit(BAS));
 	// std::cout << "bas"<< i+1-1 << ", " << j-1;
 	addUnit(~Lit(HAUT));
@@ -289,37 +292,37 @@ void constraintThree(int **capacities, int **prop, int m, int n) {
 }
 
 
-void constraintThreeLign2(int** capacities, int** prop, int m, int n) {
-	// lignes
-	FOR(i, 0, m-1){
-		int candidate = 1;
-		int j = 0;
-		while (candidate < n-1) {
-			if (!isWall(capacities, i, candidate) and j < candidate) { // on compare les paires
-				addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[i+1][candidate+1])); // -A v -B
-			} else {
-				j = candidate + 1; // après le mur : nouveau candidat
-			}
-			candidate++;
-		}
-	}
-}
+// void constraintThreeLign2(int** capacities, int** prop, int m, int n) {
+// 	// lignes
+// 	FOR(i, 0, m-1){
+// 		int candidate = 1;
+// 		int j = 0;
+// 		while (candidate < n-1) {
+// 			if (!isWall(capacities, i, candidate) and j < candidate) { // on compare les paires
+// 				addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[i+1][candidate+1])); // -A v -B
+// 			} else {
+// 				j = candidate + 1; // après le mur : nouveau candidat
+// 			}
+// 			candidate++;
+// 		}
+// 	}
+// }
 
-void constraintThreeCol2(int** capacities, int** prop, int m, int n) {
-	// colonnes
-	FOR(j, 0, m-1){
-		int candidate = 1;
-		int i = 0;
-		while (candidate < m-1) {
-			if (!isWall(capacities, candidate, j) and i < candidate) { // on compare les paires
-				addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[candidate+1][j+1])); // -A v -B
-			} else {
-				i = candidate + 1; // après le mur : nouveau candidat
-			}
-			candidate++;
-		}
-	}
-}
+// void constraintThreeCol2(int** capacities, int** prop, int m, int n) {
+// 	// colonnes
+// 	FOR(j, 0, m-1){
+// 		int candidate = 1;
+// 		int i = 0;
+// 		while (candidate < m-1) {
+// 			if (!isWall(capacities, candidate, j) and i < candidate) { // on compare les paires
+// 				addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[candidate+1][j+1])); // -A v -B
+// 			} else {
+// 				i = candidate + 1; // après le mur : nouveau candidat
+// 			}
+// 			candidate++;
+// 		}
+// 	}
+// }
 
 // ================================================================================
 // ============================== CONTRAINTE 4 ====================================
@@ -417,16 +420,21 @@ void solve(int** capacities, int m, int n, bool find_all) {
 		}
 	}
 
+
 	// ============================== CONTRAINTE 1 ====================================
+	std::cout << "CONTRAINTE 1" << std::endl;
 	constraintOne(capacities, prop, m, n);
 	
 	// ============================== CONTRAINTE 2 ====================================
+	std::cout << "CONTRAINTE 2" << std::endl;
 	constraintTwo(capacities, prop, m, n);
 
 	// ============================== CONTRAINTE 3 ====================================
+	std::cout << "CONTRAINTE 3" << std::endl;
     constraintThree(capacities, prop, m, n);
 
 	// ============================== CONTRAINTE 4 ====================================
+	std::cout << "CONTRAINTE 4" << std::endl;
 	constraintFour(capacities, prop, m, n);
 
 	// ============================ SOLVE ==================================
