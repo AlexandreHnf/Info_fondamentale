@@ -9,6 +9,10 @@
 #include <streambuf>
 #include "Solver.hpp"
 #define FOR(k,lb,ub) for (int k = lb; k <= ub; k++)
+#define HAUT prop[i-1][j]
+#define BAS prop[i+1][j]
+#define GAUCHE prop[i][j-1]
+#define DROITE prop[i][j+1]
 
 Solver s;
 
@@ -96,31 +100,28 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
 void constraintOneZero(int** prop, int i, int j) {
 	// [CAPACITE 0]
 
-	std::cout <<"dans one zero ";
-
-	s.addUnit(~Lit(prop[i+1][j]));
-	s.addUnit(~Lit(prop[i-1][j]));
-	s.addUnit(~Lit(prop[i][j+1]));
-	s.addUnit(~Lit(prop[i][j-1]));
+	s.addUnit(~Lit(BAS));
+	s.addUnit(~Lit(HAUT));
+	s.addUnit(~Lit(DROITE));
+	s.addUnit(~Lit(GAUCHE));
 }
 
-void constraintOneOne(int** prop, int k, int l) {
+void constraintOneOne(int** prop, int i, int j) {
     // (H && ~B && ~G && ~D) || (~H && B && ~G && ~D) || (~H && ~B && G && ~D) || (~H && ~B && ~G && D)
 	//                                  est équivalent à
 	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
 
-	std::cout << "dans one one";
-	 s.addBinary(~Lit(prop[k+1][l]), ~Lit(prop[k][l-1])); // (-B v -G)
-	 s.addBinary(~Lit(prop[k+1][l]), ~Lit(prop[k-1][l])); // (-B v -H)
-	 s.addBinary(~Lit(prop[k][l+1]), ~Lit(prop[k][l-1])); // (-D v -G)
-	 s.addBinary(~Lit(prop[k][l+1]), ~Lit(prop[k-1][l])); // (-D v -H)
-	 s.addBinary(~Lit(prop[k][l-1]), ~Lit(prop[k-1][l])); // (-G v -H)
+	 s.addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
+	 s.addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
+	 s.addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
+	 s.addBinary(~Lit(DROITE), ~Lit(HAUT)); // (-D v -H)
+	 s.addBinary(~Lit(GAUCHE), ~Lit(HAUT)); // (-G v -H)
 
 	 vec<Lit> lits;
-	 lits.push(Lit(prop[k+1][l]));
-	 lits.push(Lit(prop[k][l+1]));
-	 lits.push(Lit(prop[k][l-1]));
-	 lits.push(Lit(prop[k-1][l]));
+	 lits.push(Lit(BAS));
+	 lits.push(Lit(DROITE));
+	 lits.push(Lit(GAUCHE));
+	 lits.push(Lit(HAUT));
 	 s.addClause(lits); // (B v D v G v H)
 }
 
@@ -132,14 +133,14 @@ void constraintOneTwo(int** prop, int i, int j) {
 	// (¬B ∨ ¬D ∨ ¬G) ∧ (¬B ∨ ¬D ∨ ¬H) ∧ (¬B ∨ ¬G ∨ ¬H) ∧ (B ∨ D ∨ G) ∧ (B ∨ D ∨ H) ∧ 
 	// (B ∨ G ∨ H) ∧ (¬D ∨ ¬G ∨ ¬H) ∧ (D ∨ G ∨ H)
 
-	s.addTernary(~Lit(prop[i+1][j]), ~Lit(prop[i][j+1]), ~Lit(prop[i][j-1])); // (¬B ∨ ¬D ∨ ¬G)
-	s.addTernary(~Lit(prop[i+1][j]), ~Lit(prop[i][j+1]), ~Lit(prop[i-1][j])); // (¬B ∨ ¬D ∨ ¬H)
-	s.addTernary(~Lit(prop[i+1][j]), ~Lit(prop[i][j-1]), ~Lit(prop[i-1][j])); // (¬B ∨ ¬G ∨ ¬H)
-	s.addTernary(Lit(prop[i+1][j]), Lit(prop[i][j+1]), Lit(prop[i][j-1])); // (B ∨ D ∨ G)
-	s.addTernary(Lit(prop[i+1][j]), Lit(prop[i][j+1]), Lit(prop[i-1][j])); // (B ∨ D ∨ H)
-	s.addTernary(Lit(prop[i+1][j]), Lit(prop[i][j-1]), Lit(prop[i-1][j])); // (B ∨ G ∨ H)
-	s.addTernary(~Lit(prop[i][j+1]), ~Lit(prop[i][j-1]), ~Lit(prop[i-1][j])); // (¬D ∨ ¬G ∨ ¬H)
-	s.addTernary(Lit(prop[i][j+1]), Lit(prop[i][j-1]), Lit(prop[i-1][j])); // (D ∨ G ∨ H)
+	s.addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(GAUCHE)); // (¬B ∨ ¬D ∨ ¬G)
+	s.addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(HAUT)); // (¬B ∨ ¬D ∨ ¬H)
+	s.addTernary(~Lit(BAS), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬B ∨ ¬G ∨ ¬H)
+	s.addTernary(Lit(BAS), Lit(DROITE), Lit(GAUCHE)); // (B ∨ D ∨ G)
+	s.addTernary(Lit(BAS), Lit(DROITE), Lit(HAUT)); // (B ∨ D ∨ H)
+	s.addTernary(Lit(BAS), Lit(GAUCHE), Lit(HAUT)); // (B ∨ G ∨ H)
+	s.addTernary(~Lit(DROITE), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬D ∨ ¬G ∨ ¬H)
+	s.addTernary(Lit(DROITE), Lit(GAUCHE), Lit(HAUT)); // (D ∨ G ∨ H)
 
 }
 
@@ -149,27 +150,27 @@ void constraintOneThree(int** prop, int i, int j) {
 	// equivalent à ci dessous en FNC
 	//(¬B ∨ ¬D ∨ ¬G ∨ ¬H) ∧ (B ∨ D) ∧ (B ∨ G) ∧ (B ∨ H) ∧ (D ∨ G) ∧ (D ∨ H) ∧ (G ∨ H)
 
-	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i][j+1])); // (B v D)
-	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i][j-1])); // (B v G)
-	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i-1][j])); // (B v H)
-	s.addBinary(Lit(prop[i][j+1]), Lit(prop[i][j-1])); // (D v G)
-	s.addBinary(Lit(prop[i][j+1]), Lit(prop[i-1][j])); // (D v H)
-	s.addBinary(Lit(prop[i][j-1]), Lit(prop[i-1][j])); // (G v H)
+	s.addBinary(Lit(BAS), Lit(DROITE)); // (B v D)
+	s.addBinary(Lit(BAS), Lit(GAUCHE)); // (B v G)
+	s.addBinary(Lit(BAS), Lit(HAUT)); // (B v H)
+	s.addBinary(Lit(DROITE), Lit(GAUCHE)); // (D v G)
+	s.addBinary(Lit(DROITE), Lit(HAUT)); // (D v H)
+	s.addBinary(Lit(GAUCHE), Lit(HAUT)); // (G v H)
 
 	vec<Lit> lits;
-	lits.push(~Lit(prop[i+1][j]));
-    lits.push(~Lit(prop[i-1][j]));
-	lits.push(~Lit(prop[i][j+1]));
-	lits.push(~Lit(prop[i][j-1]));
+	lits.push(~Lit(BAS));
+    lits.push(~Lit(HAUT));
+	lits.push(~Lit(DROITE));
+	lits.push(~Lit(GAUCHE));
 	s.addClause(lits); // (-B v -D v -G v -H)
 }
 
 void constraintOneFour(int** prop, int i, int j) {
 	// [CAPACITE 4]
-	s.addUnit(Lit(prop[i+1][j]));
-	s.addUnit(Lit(prop[i-1][j]));
-	s.addUnit(Lit(prop[i][j+1]));
-	s.addUnit(Lit(prop[i][j-1]));
+	s.addUnit(Lit(BAS));
+	s.addUnit(Lit(HAUT));
+	s.addUnit(Lit(DROITE));
+	s.addUnit(Lit(GAUCHE));
 }
 
 void constraintOne(int** capacities, int** prop, int m, int n) {
