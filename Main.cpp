@@ -67,9 +67,12 @@ std::vector<int> getHorizontalInterval(int **capacities, int i, int j, int m, in
         } else break;
     }
     std::vector<int> res;
+	std::cout << "interval horizontal pour" << i <<"," <<j << "\n";
     for (int z = inf_j+1; z <= sup_j-1; ++z){
         res.push_back(z);
+		std::cout << z << ",";
     }
+	std::cout << std::endl;
     return res;
 }
 
@@ -88,13 +91,17 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
         } else break;
     }
     std::vector<int> res;
+	std::cout << "interval vertical pour " << i <<"," <<j << "\n";
     for (int z = inf_i+1; z <= sup_i-1; ++z){
         res.push_back(z);
+		std::cout << z << ",";
     }
+	std::cout << std::endl;
     return res;
 }
 
 std::vector<int> getIJFromLit(const Lit& p){
+	// std::cout << var(p);
     if (sign(p))
         std::cout << "-";
     std::cout << var(p)/M << var(p)%M;
@@ -142,10 +149,15 @@ void addClause(const vec<Lit>& ps){
 
 void constraintOneZero(int** prop, int i, int j) {
 	// [CAPACITE 0]
+	// std::cout << "ij: " << i-1 << ", " << j-1;
 	addUnit(~Lit(BAS));
+	// std::cout << "bas"<< i+1-1 << ", " << j-1;
 	addUnit(~Lit(HAUT));
+	// std::cout << "haut"<< i-1-1 << ", " << j-1;
 	addUnit(~Lit(DROITE));
+	// std::cout << "droite"<< i-1 << ", " << j+1-1;
 	addUnit(~Lit(GAUCHE));
+	// std::cout << "gauche"<< i-1 << ", " << j-1-1;
 }
 
 void constraintOneOne(int** prop, int i, int j) {
@@ -220,11 +232,11 @@ void constraintOne(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
 			switch(capacities[i][j]) {
-				// case 0: constraintOneZero(prop, i+1, j+1);  break;  // 0
-				// case 1: constraintOneOne(prop, i+1, j+1);   break;  // 1
-				// case 2: constraintOneTwo(prop, i+1, j+1);   break;  // 2
+				case 0: constraintOneZero(prop, i+1, j+1);  break;  // 0
+				case 1: constraintOneOne(prop, i+1, j+1);   break;  // 1
+				case 2: constraintOneTwo(prop, i+1, j+1);   break;  // 2
 				case 3: constraintOneThree(prop, i+1, j+1); break;  // 3
-				// case 4: constraintOneFour(prop, i+1, j+1);  break;  // 4
+				case 4: constraintOneFour(prop, i+1, j+1);  break;  // 4
 			}
 		}
 	}
