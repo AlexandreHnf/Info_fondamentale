@@ -21,14 +21,19 @@ Solver s;
 void pretty_print(int** matrix, int m, int n) {
 	for (int i = 0; i < m; ++i) {
 		for (int j = 0; j < n; ++j) {
-			if (matrix[i][j] == -1) {
+			if (matrix[i][j] == -1) {                              // ampoule
 				std::cout << ("\033[1;37m■\033[0m") << "  ";
-			} else if(matrix[i][j] == 0) {
+			} else if(matrix[i][j] == 0) {                         // mur 0
 				std::cout << ("\033[1;37m0\033[0m") << "  ";
-			} else if (matrix[i][j] == 1) {
+			} else if (matrix[i][j] == 1) {                        // mur 1
 				std::cout << ("\033[1;37m1\033[0m") << "  ";
-			}
-			else if (matrix[i][j] == -2) {
+			} else if (matrix[i][j] == 2) {                        // mur 2
+				std::cout << ("\033[1;37m2\033[0m") << "  ";
+			} else if (matrix[i][j] == 3) {						   // mur 3
+				std::cout << ("\033[1;37m3\033[0m") << "  ";
+			} else if (matrix[i][j] == 4) {						   // mur 4
+				std::cout << ("\033[1;37m4\033[0m") << "  ";
+			} else if (matrix[i][j] == -2) {                       // case vide
 				std::cout << ("\033[1;30m■\033[0m") << "  ";
 			}
 		}
@@ -373,6 +378,13 @@ void solve(int** capacities, int m, int n, bool find_all) {
 	// ============================ SOLVE ==================================
 	s.solve();
 	showResult(capacities, prop, m, n);
+
+	// One, two, three, one, two, three, drink
+	// One, two, three, one, two, three, drink
+	// One, two, three, one, two, three, drink
+	// Throw em back, till I lose count
+	// IIIIIIIIIIIIIIIIIIIIIIII'm gonna swing from the chandelier, from the chandeliiiiiiiier
+	// (musique de SIA mdr)
 }
 
 /**
