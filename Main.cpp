@@ -15,6 +15,8 @@
 #define DROITE prop[i][j+1]
 
 Solver s;
+int M = 0;
+int N = 0;
 
 /**
  * Pretty prints the given matrix
@@ -92,6 +94,47 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
     return res;
 }
 
+std::vector<int> getIJFromLit(const Lit& p){
+    if (sign(p))
+        std::cout << "-";
+    std::cout << var(p)/M << var(p)%M;
+    return std::vector<int> {var(p)/M , var(p)%M};
+}
+
+void addUnit(Lit p){
+    s.addUnit(p);
+    getIJFromLit(p);
+    std::cout << std::endl;
+}
+
+void addBinary(Lit p, Lit q){
+    s.addBinary(p, q);
+    getIJFromLit(p);
+    std::cout << " v ";
+    getIJFromLit(q);
+    std::cout << std::endl;
+}
+
+void addTernary(Lit p, Lit q, Lit r){
+    s.addTernary(p, q, r);
+    getIJFromLit(p);
+    std::cout << " v ";
+    getIJFromLit(q);
+    std::cout << " v ";
+    getIJFromLit(r);
+    std::cout << std::endl;
+}
+
+void addClause(const vec<Lit>& ps){
+    s.addClause(ps);
+    for (int i = 0; i < ps.size(); i++){
+        getIJFromLit(ps[i]);
+        if (i != ps.size() -1)
+            std::cout << " v ";
+    }
+    std::cout << std::endl;
+}
+
 // ================================================================================
 // ============================== CONTRAINTE 1 ====================================
 // =================== Chaque mur a 0 ou 1 ampoule autour =========================
@@ -99,11 +142,10 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
 
 void constraintOneZero(int** prop, int i, int j) {
 	// [CAPACITE 0]
-
-	s.addUnit(~Lit(BAS));
-	s.addUnit(~Lit(HAUT));
-	s.addUnit(~Lit(DROITE));
-	s.addUnit(~Lit(GAUCHE));
+	addUnit(~Lit(BAS));
+	addUnit(~Lit(HAUT));
+	addUnit(~Lit(DROITE));
+	addUnit(~Lit(GAUCHE));
 }
 
 void constraintOneOne(int** prop, int i, int j) {
@@ -111,19 +153,19 @@ void constraintOneOne(int** prop, int i, int j) {
 	//                                  est équivalent à
 	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
 
-	 s.addBinary(~Lit(BAS), ~Lit(DROITE)); // (-B v -D)
-	 s.addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
-	 s.addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
-	 s.addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
-	 s.addBinary(~Lit(DROITE), ~Lit(HAUT)); // (-D v -H)
-	 s.addBinary(~Lit(GAUCHE), ~Lit(HAUT)); // (-G v -H)
+	 addBinary(~Lit(BAS), ~Lit(DROITE)); // (-B v -D)
+	 addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
+	 addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
+	 addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
+	 addBinary(~Lit(DROITE), ~Lit(HAUT)); // (-D v -H)
+	 addBinary(~Lit(GAUCHE), ~Lit(HAUT)); // (-G v -H)
 
 	 vec<Lit> lits;
 	 lits.push(Lit(BAS));
 	 lits.push(Lit(DROITE));
 	 lits.push(Lit(GAUCHE));
 	 lits.push(Lit(HAUT));
-	 s.addClause(lits); // (B v D v G v H)
+	 addClause(lits); // (B v D v G v H)
 }
 
 void constraintOneTwo(int** prop, int i, int j) {
@@ -134,14 +176,14 @@ void constraintOneTwo(int** prop, int i, int j) {
 	// (¬B ∨ ¬D ∨ ¬G) ∧ (¬B ∨ ¬D ∨ ¬H) ∧ (¬B ∨ ¬G ∨ ¬H) ∧ (B ∨ D ∨ G) ∧ (B ∨ D ∨ H) ∧ 
 	// (B ∨ G ∨ H) ∧ (¬D ∨ ¬G ∨ ¬H) ∧ (D ∨ G ∨ H)
 
-	s.addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(GAUCHE)); // (¬B ∨ ¬D ∨ ¬G)
-	s.addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(HAUT)); // (¬B ∨ ¬D ∨ ¬H)
-	s.addTernary(~Lit(BAS), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬B ∨ ¬G ∨ ¬H)
-	s.addTernary(Lit(BAS), Lit(DROITE), Lit(GAUCHE)); // (B ∨ D ∨ G)
-	s.addTernary(Lit(BAS), Lit(DROITE), Lit(HAUT)); // (B ∨ D ∨ H)
-	s.addTernary(Lit(BAS), Lit(GAUCHE), Lit(HAUT)); // (B ∨ G ∨ H)
-	s.addTernary(~Lit(DROITE), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬D ∨ ¬G ∨ ¬H)
-	s.addTernary(Lit(DROITE), Lit(GAUCHE), Lit(HAUT)); // (D ∨ G ∨ H)
+	addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(GAUCHE)); // (¬B ∨ ¬D ∨ ¬G)
+	addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(HAUT)); // (¬B ∨ ¬D ∨ ¬H)
+	addTernary(~Lit(BAS), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬B ∨ ¬G ∨ ¬H)
+	addTernary(Lit(BAS), Lit(DROITE), Lit(GAUCHE)); // (B ∨ D ∨ G)
+	addTernary(Lit(BAS), Lit(DROITE), Lit(HAUT)); // (B ∨ D ∨ H)
+	addTernary(Lit(BAS), Lit(GAUCHE), Lit(HAUT)); // (B ∨ G ∨ H)
+	addTernary(~Lit(DROITE), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬D ∨ ¬G ∨ ¬H)
+	addTernary(Lit(DROITE), Lit(GAUCHE), Lit(HAUT)); // (D ∨ G ∨ H)
 
 }
 
@@ -151,27 +193,27 @@ void constraintOneThree(int** prop, int i, int j) {
 	// equivalent à ci dessous en FNC
 	//(¬B ∨ ¬D ∨ ¬G ∨ ¬H) ∧ (B ∨ D) ∧ (B ∨ G) ∧ (B ∨ H) ∧ (D ∨ G) ∧ (D ∨ H) ∧ (G ∨ H)
 
-	s.addBinary(Lit(BAS), Lit(DROITE)); // (B v D)
-	s.addBinary(Lit(BAS), Lit(GAUCHE)); // (B v G)
-	s.addBinary(Lit(BAS), Lit(HAUT)); // (B v H)
-	s.addBinary(Lit(DROITE), Lit(GAUCHE)); // (D v G)
-	s.addBinary(Lit(DROITE), Lit(HAUT)); // (D v H)
-	s.addBinary(Lit(GAUCHE), Lit(HAUT)); // (G v H)
+	addBinary(Lit(BAS), Lit(DROITE)); // (B v D)
+	addBinary(Lit(BAS), Lit(GAUCHE)); // (B v G)
+	addBinary(Lit(BAS), Lit(HAUT)); // (B v H)
+	addBinary(Lit(DROITE), Lit(GAUCHE)); // (D v G)
+	addBinary(Lit(DROITE), Lit(HAUT)); // (D v H)
+	addBinary(Lit(GAUCHE), Lit(HAUT)); // (G v H)
 
 	vec<Lit> lits;
 	lits.push(~Lit(BAS));
     lits.push(~Lit(HAUT));
 	lits.push(~Lit(DROITE));
 	lits.push(~Lit(GAUCHE));
-	s.addClause(lits); // (-B v -D v -G v -H)
+	addClause(lits); // (-B v -D v -G v -H)
 }
 
 void constraintOneFour(int** prop, int i, int j) {
 	// [CAPACITE 4]
-	s.addUnit(Lit(BAS));
-	s.addUnit(Lit(HAUT));
-	s.addUnit(Lit(DROITE));
-	s.addUnit(Lit(GAUCHE));
+	addUnit(Lit(BAS));
+	addUnit(Lit(HAUT));
+	addUnit(Lit(DROITE));
+	addUnit(Lit(GAUCHE));
 }
 
 void constraintOne(int** capacities, int** prop, int m, int n) {
@@ -197,7 +239,7 @@ void constraintTwo(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
 			if (isWall(capacities, i,j)) {
-				s.addUnit(~Lit(prop[i+1][j+1]));
+				addUnit(~Lit(prop[i+1][j+1]));
 			}
 		}
 	}
@@ -217,7 +259,7 @@ void constraintThree(int **capacities, int **prop, int m, int n) {
                 FOR(k, 0, (int) hor.size() - 1) {
                     FOR(l, 0, (int) hor.size() - 1) {
                         if (k == l) continue;
-                        s.addBinary(~Lit(prop[i + 1][hor[k] + 1]), ~Lit(prop[i + 1][hor[l] + 1]));
+                        addBinary(~Lit(prop[i + 1][hor[k] + 1]), ~Lit(prop[i + 1][hor[l] + 1]));
                     }
                 }
             }
@@ -226,7 +268,7 @@ void constraintThree(int **capacities, int **prop, int m, int n) {
                 FOR(k, 0, (int) vert.size() - 1) {
                     FOR(l, 0, (int) vert.size() - 1) {
                         if (k == l) continue;
-                        s.addBinary(~Lit(prop[vert[k] + 1][j + 1]), ~Lit(prop[vert[l] + 1][j + 1]));
+                        addBinary(~Lit(prop[vert[k] + 1][j + 1]), ~Lit(prop[vert[l] + 1][j + 1]));
                     }
                 }
             }
@@ -242,7 +284,7 @@ void constraintThreeLign2(int** capacities, int** prop, int m, int n) {
 		int j = 0;
 		while (candidate < n-1) {
 			if (!isWall(capacities, i, candidate) and j < candidate) { // on compare les paires
-				s.addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[i+1][candidate+1])); // -A v -B
+				addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[i+1][candidate+1])); // -A v -B
 			} else {
 				j = candidate + 1; // après le mur : nouveau candidat
 			}
@@ -258,7 +300,7 @@ void constraintThreeCol2(int** capacities, int** prop, int m, int n) {
 		int i = 0;
 		while (candidate < m-1) {
 			if (!isWall(capacities, candidate, j) and i < candidate) { // on compare les paires
-				s.addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[candidate+1][j+1])); // -A v -B
+				addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[candidate+1][j+1])); // -A v -B
 			} else {
 				i = candidate + 1; // après le mur : nouveau candidat
 			}
@@ -291,7 +333,7 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 	 		    lits.push(Lit(prop[z+1][j+1]));
 	 		}
 
-	 		s.addClause(lits);
+	 		addClause(lits);
 	 	}
 	 }
 }
@@ -440,6 +482,8 @@ int main(int argc, char** argv) {
 	} else {
 		// read instance on standard input
 		std::cin >> m >> n;
+		M = m;
+		N = n;
 		int** capacities = new int*[m];
 		for (int i = 0; i < m; ++i) {
 			capacities[i] = new int[n];
