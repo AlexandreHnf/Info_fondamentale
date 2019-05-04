@@ -152,15 +152,15 @@ void constraintOneThree(int** prop, int i, int j) {
 	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i][j+1])); // (B v D)
 	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i][j-1])); // (B v G)
 	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i-1][j])); // (B v H)
-	s.addBinary(Lit(prop[i][j-1]), Lit(prop[i][j-1])); // (D v G)
-	s.addBinary(Lit(prop[i][j-1]), Lit(prop[i-1][j])); // (D v H)
-	s.addBinary(Lit(prop[i][j+1]), Lit(prop[i-1][j])); // (G v H)
+	s.addBinary(Lit(prop[i][j+1]), Lit(prop[i][j-1])); // (D v G)
+	s.addBinary(Lit(prop[i][j+1]), Lit(prop[i-1][j])); // (D v H)
+	s.addBinary(Lit(prop[i][j-1]), Lit(prop[i-1][j])); // (G v H)
 
 	vec<Lit> lits;
 	lits.push(~Lit(prop[i+1][j]));
+    lits.push(~Lit(prop[i-1][j]));
 	lits.push(~Lit(prop[i][j+1]));
 	lits.push(~Lit(prop[i][j-1]));
-	lits.push(~Lit(prop[i-1][j]));
 	s.addClause(lits); // (-B v -D v -G v -H)
 }
 
