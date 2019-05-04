@@ -72,7 +72,7 @@ std::vector<int> getHorizontalInterval(int **capacities, int i, int j, int m, in
         res.push_back(z);
 		// std::cout << z << ",";
     }
-	std::cout << std::endl;
+	// std::cout << std::endl;
     return res;
 }
 
@@ -96,7 +96,7 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
         res.push_back(z);
 		// std::cout << z << ",";
     }
-	std::cout << std::endl;
+	// std::cout << std::endl;
     return res;
 }
 
@@ -104,45 +104,46 @@ std::vector<int> getIJFromLit(const Lit& p){
 	// std::cout << var(p);
     if (sign(p))
         std::cout << "-";
-    int j = (var(p)%N) +1 ;
-    int i = (var(p) - j ) / M + 1;
-    std::cout << i << j;
+    int j = (var(p)%N) ;
+    int i = (var(p) - j ) / M;
+    i++; j++;
+    std::cout << var(p) << "(" << i << j<< ")";
     return std::vector<int> {i, j};
 }
 
 void addUnit(Lit p){
-	std::cout << "["<<var(p)<<"]";
     s.addUnit(p); 
-    getIJFromLit(p);
-    std::cout << std::endl;
+    // getIJFromLit(p);
+    // std::cout << std::endl;
 }
 
 void addBinary(Lit p, Lit q){
     s.addBinary(p, q);
-    getIJFromLit(p);
-    std::cout << " v ";
-    getIJFromLit(q);
-    std::cout << std::endl;
+    // getIJFromLit(p);
+    // std::cout << " v ";
+    // getIJFromLit(q);
+    // std::cout << std::endl;
 }
 
 void addTernary(Lit p, Lit q, Lit r){
     s.addTernary(p, q, r);
-    getIJFromLit(p);
-    std::cout << " v ";
-    getIJFromLit(q);
-    std::cout << " v ";
-    getIJFromLit(r);
-    std::cout << std::endl;
+    // getIJFromLit(p);
+    // std::cout << " v ";
+    // getIJFromLit(q);
+    // std::cout << " v ";
+    // getIJFromLit(r);
+    // std::cout << std::endl;
 }
 
 void addClause(const vec<Lit>& ps){
     s.addClause(ps);
     for (int i = 0; i < ps.size(); i++){
-        getIJFromLit(ps[i]);
-        if (i != ps.size() -1)
-            std::cout << " v ";
+        // getIJFromLit(ps[i]);
+        if (i != ps.size() -1) {
+            // std::cout << " v ";
+		}
     }
-    std::cout << std::endl;
+    // std::cout << std::endl;
 }
 
 // ================================================================================
@@ -152,7 +153,7 @@ void addClause(const vec<Lit>& ps){
 
 void constraintOneZero(int** prop, int i, int j) {
 	// [CAPACITE 0]
-	std::cout << "ij: " << i-1 << ", " << j-1;
+	// std::cout << "ij: " << i-1 << ", " << j-1;
 	addUnit(~Lit(BAS));
 	// std::cout << "bas"<< i+1-1 << ", " << j-1;
 	addUnit(~Lit(HAUT));
@@ -347,7 +348,6 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 	 		for (int z : vert2){
 	 		    lits.push(Lit(prop[z+1][j+1]));
 	 		}
-
 	 		addClause(lits);
 	 	}
 	 }
@@ -401,7 +401,7 @@ void showResult(int** capacities, int** prop, int m, int n){
  */  
 void solve(int** capacities, int m, int n, bool find_all) {
 	pretty_print(capacities, m, n);
-	std::cout << std::endl;
+	// std::cout << std::endl;
 
 	// Fonction à compléter pour les questions 2 et 3 (et bonus 1)
 
@@ -414,27 +414,27 @@ void solve(int** capacities, int m, int n, bool find_all) {
 		}
 	}
 
-	FOR(i, 0, m-1) {
-		FOR(j, 0, n-1) {
-			prop[i+1][j+1] = s.newVar();
+	FOR(i, 0, m) {
+		FOR(j, 0, n) {
+			prop[i][j] = s.newVar();
 		}
 	}
 
 
 	// ============================== CONTRAINTE 1 ====================================
-	std::cout << "CONTRAINTE 1" << std::endl;
+	// std::cout << "CONTRAINTE 1" << std::endl;
 	constraintOne(capacities, prop, m, n);
 	
 	// ============================== CONTRAINTE 2 ====================================
-	std::cout << "CONTRAINTE 2" << std::endl;
+	// std::cout << "CONTRAINTE 2" << std::endl;
 	constraintTwo(capacities, prop, m, n);
 
 	// ============================== CONTRAINTE 3 ====================================
-	std::cout << "CONTRAINTE 3" << std::endl;
+	// std::cout << "CONTRAINTE 3" << std::endl;
     constraintThree(capacities, prop, m, n);
 
 	// ============================== CONTRAINTE 4 ====================================
-	std::cout << "CONTRAINTE 4" << std::endl;
+	// std::cout << "CONTRAINTE 4" << std::endl;
 	constraintFour(capacities, prop, m, n);
 
 	// ============================ SOLVE ==================================
