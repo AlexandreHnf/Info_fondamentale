@@ -111,39 +111,36 @@ std::vector<int> getIJFromLit(const Lit& p){
     return std::vector<int> {i, j};
 }
 
-void addUnit(Lit p){
-    s.addUnit(p); 
-    // getIJFromLit(p);
-    // std::cout << std::endl;
-}
-
-void addBinary(Lit p, Lit q){
-    s.addBinary(p, q);
-    // getIJFromLit(p);
-    // std::cout << " v ";
-    // getIJFromLit(q);
-    // std::cout << std::endl;
-}
-
-void addTernary(Lit p, Lit q, Lit r){
-    s.addTernary(p, q, r);
-    // getIJFromLit(p);
-    // std::cout << " v ";
-    // getIJFromLit(q);
-    // std::cout << " v ";
-    // getIJFromLit(r);
-    // std::cout << std::endl;
-}
-
 void addClause(const vec<Lit>& ps){
     s.addClause(ps);
     for (int i = 0; i < ps.size(); i++){
         // getIJFromLit(ps[i]);
         if (i != ps.size() -1) {
             // std::cout << " v ";
-		}
+        }
     }
     // std::cout << std::endl;
+}
+
+void addUnit(Lit p){
+    vec<Lit> vector;
+    vector.push(p);
+    addClause(vector);
+}
+
+void addBinary(Lit p, Lit q){
+    vec<Lit> vector;
+    vector.push(p);
+    vector.push(q);
+    addClause(vector);
+}
+
+void addTernary(Lit p, Lit q, Lit r){
+    vec<Lit> vector;
+    vector.push(p);
+    vector.push(q);
+    vector.push(r);
+    addClause(vector);
 }
 
 // ================================================================================
@@ -293,38 +290,6 @@ void constraintThree(int **capacities, int **prop, int m, int n) {
 }
 
 
-// void constraintThreeLign2(int** capacities, int** prop, int m, int n) {
-// 	// lignes
-// 	FOR(i, 0, m-1){
-// 		int candidate = 1;
-// 		int j = 0;
-// 		while (candidate < n-1) {
-// 			if (!isWall(capacities, i, candidate) and j < candidate) { // on compare les paires
-// 				addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[i+1][candidate+1])); // -A v -B
-// 			} else {
-// 				j = candidate + 1; // après le mur : nouveau candidat
-// 			}
-// 			candidate++;
-// 		}
-// 	}
-// }
-
-// void constraintThreeCol2(int** capacities, int** prop, int m, int n) {
-// 	// colonnes
-// 	FOR(j, 0, m-1){
-// 		int candidate = 1;
-// 		int i = 0;
-// 		while (candidate < m-1) {
-// 			if (!isWall(capacities, candidate, j) and i < candidate) { // on compare les paires
-// 				addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[candidate+1][j+1])); // -A v -B
-// 			} else {
-// 				i = candidate + 1; // après le mur : nouveau candidat
-// 			}
-// 			candidate++;
-// 		}
-// 	}
-// }
-
 // ================================================================================
 // ============================== CONTRAINTE 4 ====================================
 // =================== Toutes les cases sont éclairées ============================
@@ -351,6 +316,25 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 	 		addClause(lits);
 	 	}
 	 }
+}
+
+
+// ================================================================================
+// ============================== CONTRAINTE SUPP =================================
+// Ajoute des contraintes sur les cases non affichées.
+// Elles ne peuvent pas contenir d'ampoules.
+// Pas utile dans le rapport.
+// ================================================================================
+
+
+void constraintSupp(int** capacities, int** prop, int m, int n){
+    FOR(i, 0, m+1){
+        FOR(j, 0, n+1){
+            if (i == 0 or j == 0 or i == m+1 or j == n+1){
+                addUnit(~Lit(prop[i][j]));
+            }
+        }
+    }
 }
 
 
@@ -422,20 +406,19 @@ void solve(int** capacities, int m, int n, bool find_all) {
 
 
 	// ============================== CONTRAINTE 1 ====================================
-	// std::cout << "CONTRAINTE 1" << std::endl;
 	constraintOne(capacities, prop, m, n);
 	
 	// ============================== CONTRAINTE 2 ====================================
-	// std::cout << "CONTRAINTE 2" << std::endl;
 	constraintTwo(capacities, prop, m, n);
 
 	// ============================== CONTRAINTE 3 ====================================
-	// std::cout << "CONTRAINTE 3" << std::endl;
     constraintThree(capacities, prop, m, n);
 
 	// ============================== CONTRAINTE 4 ====================================
-	// std::cout << "CONTRAINTE 4" << std::endl;
 	constraintFour(capacities, prop, m, n);
+
+    // ============================== CONTRAINTE SUPP ====================================
+    constraintSupp(capacities, prop, m, n);
 
 	// ============================ SOLVE ==================================
 	s.solve();
