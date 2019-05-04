@@ -111,6 +111,7 @@ void constraintOneOne(int** prop, int i, int j) {
 	//                                  est équivalent à
 	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
 
+	 s.addBinary(~Lit(BAS), ~Lit(DROITE)); // (-B v -D)
 	 s.addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
 	 s.addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
 	 s.addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
@@ -212,18 +213,18 @@ void constraintThree(int **capacities, int **prop, int m, int n) {
     FOR(i, 0, m-1){
         FOR(j, 0, n-1) {
             std::vector<int> hor = getHorizontalInterval(capacities, i, j, m, n);
-            if (hor.size() >= 2) {
-                FOR(k, 0, hor.size() - 1) {
-                    FOR(l, 0, hor.size() - 1) {
+            if ((int) hor.size() >= 2) {
+                FOR(k, 0, (int) hor.size() - 1) {
+                    FOR(l, 0, (int) hor.size() - 1) {
                         if (k == l) continue;
                         s.addBinary(~Lit(prop[i + 1][hor[k] + 1]), ~Lit(prop[i + 1][hor[l] + 1]));
                     }
                 }
             }
             std::vector<int> vert = getVerticalInterval(capacities, i, j, m, n);
-            if (vert.size() >= 2) {
-                FOR(k, 0, vert.size() - 1) {
-                    FOR(l, 0, vert.size() - 1) {
+            if ((int) vert.size() >= 2) {
+                FOR(k, 0, (int) vert.size() - 1) {
+                    FOR(l, 0, (int) vert.size() - 1) {
                         if (k == l) continue;
                         s.addBinary(~Lit(prop[vert[k] + 1][j + 1]), ~Lit(prop[vert[l] + 1][j + 1]));
                     }
