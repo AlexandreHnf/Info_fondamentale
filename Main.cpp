@@ -97,8 +97,10 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
 std::vector<int> getIJFromLit(const Lit& p){
     if (sign(p))
         std::cout << "-";
-    std::cout << var(p)/M << var(p)%M;
-    return std::vector<int> {var(p)/M , var(p)%M};
+    int j = (var(p)%N) +1 ;
+    int i = (var(p) - j ) / M + 1;
+    std::cout << i << j;
+    return std::vector<int> {i, j};
 }
 
 void addUnit(Lit p){
@@ -142,10 +144,10 @@ void addClause(const vec<Lit>& ps){
 
 void constraintOneZero(int** prop, int i, int j) {
 	// [CAPACITE 0]
-	addUnit(~Lit(BAS));
-	addUnit(~Lit(HAUT));
-	addUnit(~Lit(DROITE));
-	addUnit(~Lit(GAUCHE));
+//	addUnit(~Lit(BAS));
+//	addUnit(~Lit(HAUT));
+//	addUnit(~Lit(DROITE));
+//	addUnit(~Lit(GAUCHE));
 }
 
 void constraintOneOne(int** prop, int i, int j) {
@@ -404,6 +406,7 @@ void solve(int** capacities, int m, int n, bool find_all) {
 			prop[i+1][j+1] = s.newVar();
 		}
 	}
+
 
 	// ============================== CONTRAINTE 1 ====================================
 	//  constraintOneZero(capacities, prop, m, n); // [CAPACITE 0]
