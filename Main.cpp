@@ -111,6 +111,7 @@ void constraintOneOne(int** prop, int i, int j) {
 	//                                  est équivalent à
 	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
 
+	 s.addBinary(~Lit(BAS), ~Lit(DROITE)); // (-B v -D)
 	 s.addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
 	 s.addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
 	 s.addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
