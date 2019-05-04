@@ -37,11 +37,12 @@ void pretty_print(int** matrix, int m, int n) {
 }
 
 bool isWall(int** capacities, int i, int j){
-	return capacities[i][j] == -1 or capacities[i][j] == 0 or capacities[i][j] == 1;
+	return capacities[i][j] == -1 or capacities[i][j] == 0 or capacities[i][j] == 1
+	or capacities[i][j] == 2 or capacities[i][j] == 3 or capacities[i][j] == 4;
 }
 
 std::vector<int> getHorizontalInterval(int **capacities, int i, int j, int m, int n) {
-    // get the intervalle in which a cell is
+    // get the horizontal interval in which a cell is
     int inf_j = j;
     int sup_j = j;
     while (inf_j >= 0) { // vers la gauche
@@ -62,7 +63,7 @@ std::vector<int> getHorizontalInterval(int **capacities, int i, int j, int m, in
 }
 
 std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int n) {
-    // get the intervalle in which a cell is
+    // get the vertical interval in which a cell is
     int inf_i = i;
     int sup_i = i;
     while (inf_i >= 0) { // vers le haut
@@ -87,26 +88,23 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
 // =================== Chaque mur a 0 ou 1 ampoule autour =========================
 // ================================================================================
 
-void constraintOneZero(int** capacities, int** prop, int m, int n) {
+void constraintOneZero(int** prop, int i, int j) {
 	// [CAPACITE 0]
 
-	FOR(i, 0, m-1) {
-		FOR(j, 0, n-1) {
-			if (capacities[i][j] == 0) { // Mur de capacité 0
-                s.addUnit(~Lit(prop[i+1+1][j+1]));
-                s.addUnit(~Lit(prop[i-1+1][j+1]));
-                s.addUnit(~Lit(prop[i+1][j+1+1]));
-                s.addUnit(~Lit(prop[i+1][j-1+1]));
-			}
-		}
-	}
+	std::cout <<"dans one zero ";
+
+	s.addUnit(~Lit(prop[i+1][j]));
+	s.addUnit(~Lit(prop[i-1][j]));
+	s.addUnit(~Lit(prop[i][j+1]));
+	s.addUnit(~Lit(prop[i][j-1]));
 }
 
-void addBinaryNeg(int** prop, int k, int l) {
+void constraintOneOne(int** prop, int k, int l) {
     // (H && ~B && ~G && ~D) || (~H && B && ~G && ~D) || (~H && ~B && G && ~D) || (~H && ~B && ~G && D)
 	//                                  est équivalent à
 	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
 
+	std::cout << "dans one one";
 	 s.addBinary(~Lit(prop[k+1][l]), ~Lit(prop[k][l-1])); // (-B v -G)
 	 s.addBinary(~Lit(prop[k+1][l]), ~Lit(prop[k-1][l])); // (-B v -H)
 	 s.addBinary(~Lit(prop[k][l+1]), ~Lit(prop[k][l-1])); // (-D v -G)
@@ -118,20 +116,66 @@ void addBinaryNeg(int** prop, int k, int l) {
 	 lits.push(Lit(prop[k][l+1]));
 	 lits.push(Lit(prop[k][l-1]));
 	 lits.push(Lit(prop[k-1][l]));
-	 s.addClause(lits);
+	 s.addClause(lits); // (B v D v G v H)
 }
 
-void constraintOneOne(int** capacities, int** prop, int m, int n) {
-	// [CAPACITE 1]
-	// B = i+1, j
-	// H = i-1, j
-	// G = i, j-1
-	// D = i, j+1
+void constraintOneTwo(int** prop, int i, int j) {
+	// [CAPACITE 2]
+	// (H ∧ B ∧ ¬G ∧ ¬D) ∨ (¬H ∧ ¬B ∧ G ∧ D) ∨ (H ∧ ¬B ∧ ¬G ∧ D) ∨ (¬H ∧ B ∧ ¬G ∧ D) ∨
+	//  (¬H ∧ B ∧ G ∧ ¬D) ∨ (H ∧ ¬B ∧ G ∧ ¬D)
+	// equivalent à ci dessous en FNC
+	// (¬B ∨ ¬D ∨ ¬G) ∧ (¬B ∨ ¬D ∨ ¬H) ∧ (¬B ∨ ¬G ∨ ¬H) ∧ (B ∨ D ∨ G) ∧ (B ∨ D ∨ H) ∧ 
+	// (B ∨ G ∨ H) ∧ (¬D ∨ ¬G ∨ ¬H) ∧ (D ∨ G ∨ H)
 
+	s.addTernary(~Lit(prop[i+1][j]), ~Lit(prop[i][j+1]), ~Lit(prop[i][j-1])); // (¬B ∨ ¬D ∨ ¬G)
+	s.addTernary(~Lit(prop[i+1][j]), ~Lit(prop[i][j+1]), ~Lit(prop[i-1][j])); // (¬B ∨ ¬D ∨ ¬H)
+	s.addTernary(~Lit(prop[i+1][j]), ~Lit(prop[i][j-1]), ~Lit(prop[i-1][j])); // (¬B ∨ ¬G ∨ ¬H)
+	s.addTernary(Lit(prop[i+1][j]), Lit(prop[i][j+1]), Lit(prop[i][j-1])); // (B ∨ D ∨ G)
+	s.addTernary(Lit(prop[i+1][j]), Lit(prop[i][j+1]), Lit(prop[i-1][j])); // (B ∨ D ∨ H)
+	s.addTernary(Lit(prop[i+1][j]), Lit(prop[i][j-1]), Lit(prop[i-1][j])); // (B ∨ G ∨ H)
+	s.addTernary(~Lit(prop[i][j+1]), ~Lit(prop[i][j-1]), ~Lit(prop[i-1][j])); // (¬D ∨ ¬G ∨ ¬H)
+	s.addTernary(Lit(prop[i][j+1]), Lit(prop[i][j-1]), Lit(prop[i-1][j])); // (D ∨ G ∨ H)
+
+}
+
+void constraintOneThree(int** prop, int i, int j) {
+	// [CAPACITE 3]
+	// (H ∧ B ∧ ¬G ∧ D) ∨ (¬H ∧ B ∧ G ∧ D) ∨ (H ∧ B ∧ G ∧ ¬D) ∨ (H ∧ ¬B ∧ G ∧ D)
+	// equivalent à ci dessous en FNC
+	//(¬B ∨ ¬D ∨ ¬G ∨ ¬H) ∧ (B ∨ D) ∧ (B ∨ G) ∧ (B ∨ H) ∧ (D ∨ G) ∧ (D ∨ H) ∧ (G ∨ H)
+
+	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i][j+1])); // (B v D)
+	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i][j-1])); // (B v G)
+	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i-1][j])); // (B v H)
+	s.addBinary(Lit(prop[i][j-1]), Lit(prop[i][j-1])); // (D v G)
+	s.addBinary(Lit(prop[i][j-1]), Lit(prop[i-1][j])); // (D v H)
+	s.addBinary(Lit(prop[i][j+1]), Lit(prop[i-1][j])); // (G v H)
+
+	vec<Lit> lits;
+	lits.push(~Lit(prop[i+1][j]));
+	lits.push(~Lit(prop[i][j+1]));
+	lits.push(~Lit(prop[i][j-1]));
+	lits.push(~Lit(prop[i-1][j]));
+	s.addClause(lits); // (-B v -D v -G v -H)
+}
+
+void constraintOneFour(int** prop, int i, int j) {
+	// [CAPACITE 4]
+	s.addUnit(Lit(prop[i+1][j]));
+	s.addUnit(Lit(prop[i-1][j]));
+	s.addUnit(Lit(prop[i][j+1]));
+	s.addUnit(Lit(prop[i][j-1]));
+}
+
+void constraintOne(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
-			if (capacities[i][j] == 1) { // Mur de capacité 1
-				addBinaryNeg(prop, i+1, j+1);
+			switch(capacities[i][j]) {
+				case 0: constraintOneZero(prop, i+1, j+1);  break;  // 0
+				case 1: constraintOneOne(prop, i+1, j+1);   break;  // 1
+				case 2: constraintOneTwo(prop, i+1, j+1);   break;  // 2
+				case 3: constraintOneThree(prop, i+1, j+1); break;  // 3
+				case 4: constraintOneFour(prop, i+1, j+1);  break;  // 4
 			}
 		}
 	}
@@ -267,6 +311,12 @@ void showResult(int** capacities, int** prop, int m, int n){
 					std::cout << ("\033[1;31m0\033[0m") << "  ";
 				} else if (capacities[i][j] == 1) {
 					std::cout << ("\033[1;31m1\033[0m") << "  ";
+				} else if (capacities[i][j] == 2) {
+					std::cout << ("\033[1;31m2\033[0m") << "  ";
+				} else if (capacities[i][j] == 3) {
+					std::cout << ("\033[1;31m3\033[0m") << "  ";
+				} else if (capacities[i][j] == 4) {
+					std::cout << ("\033[1;31m4\033[0m") << "  ";
 				} else {
 					std::cout << ("\033[1;34m-\033[0m") << "  ";
 				}
@@ -307,8 +357,9 @@ void solve(int** capacities, int m, int n, bool find_all) {
 	}
 
 	// ============================== CONTRAINTE 1 ====================================
-	 constraintOneZero(capacities, prop, m, n); // [CAPACITE 0]
-	 constraintOneOne(capacities, prop, m, n); // [CAPACITE 1]
+	//  constraintOneZero(capacities, prop, m, n); // [CAPACITE 0]
+	//  constraintOneOne(capacities, prop, m, n); // [CAPACITE 1]
+	constraintOne(capacities, prop, m, n);
 	
 	// ============================== CONTRAINTE 2 ====================================
 	constraintTwo(capacities, prop, m, n);
