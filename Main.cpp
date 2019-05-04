@@ -9,10 +9,10 @@
 #include <streambuf>
 #include "Solver.hpp"
 #define FOR(k,lb,ub) for (int k = lb; k <= ub; k++)
-#define HAUT prop[i-1][j]
-#define BAS prop[i+1][j]
-#define GAUCHE prop[i][j-1]
-#define DROITE prop[i][j+1]
+#define HAUT prop, i-1, j
+#define BAS prop, i+1, j
+#define GAUCHE prop, i, j-1
+#define DROITE prop, i, j+1
 
 Solver s;
 int M = 0;
@@ -99,43 +99,58 @@ std::vector<int> getIJFromLit(const Lit& p){
         std::cout << "-";
     int j = (var(p)%N) ;
     int i = (var(p) - j ) / M;
-    i++; j++;
-    std::cout << var(p) << "(" << i << j<< ")";
+    std::cout << "(" << i << j<< ")";
     return std::vector<int> {i, j};
 }
 
-void addUnit(Lit p){
-    s.addUnit(p);
-    getIJFromLit(p);
-    std::cout << std::endl;
-}
-
-void addBinary(Lit p, Lit q){
-    s.addBinary(p, q);
-    getIJFromLit(p);
-    std::cout << " v ";
-    getIJFromLit(q);
-    std::cout << std::endl;
-}
-
-void addTernary(Lit p, Lit q, Lit r){
-    s.addTernary(p, q, r);
-    getIJFromLit(p);
-    std::cout << " v ";
-    getIJFromLit(q);
-    std::cout << " v ";
-    getIJFromLit(r);
-    std::cout << std::endl;
-}
-
 void addClause(const vec<Lit>& ps){
-    s.addClause(ps);
-    for (int i = 0; i < ps.size(); i++){
-        getIJFromLit(ps[i]);
-        if (i != ps.size() -1)
+    vec<Lit> vector;
+    for (int i = 0; i < ps.size(); ++i){
+        if (ps[i] != Lit(-1)){
+            vector.push(ps[i]);
+        }
+    }
+    if (vector.size() < 1)
+        return;
+    s.addClause(vector);
+}
+
+void printClause(const vec<Lit>& vector){
+    for (int i = 0; i < vector.size(); i++){
+        getIJFromLit(vector[i]);
+        if (i != vector.size() -1)
             std::cout << " v ";
     }
     std::cout << std::endl;
+}
+
+Lit Litt(int** prop, int i, int j, bool sign){
+    if (i < 0 or j < 0 or i > M-1 or j > N-1)
+        return Lit(-1);
+    if (sign)
+        return Lit(prop[i][j]);
+    return ~Lit(prop[i][j]);
+}
+
+void addUnit(Lit p){
+    vec<Lit> vector;
+    vector.push(p);
+    addClause(vector);
+}
+
+void addBinary(Lit p, Lit q){
+    vec<Lit> vector;
+    vector.push(p);
+    vector.push(q);
+    addClause(vector);
+}
+
+void addTernary(Lit p, Lit q, Lit r){
+    vec<Lit> vector;
+    vector.push(p);
+    vector.push(q);
+    vector.push(r);
+    addClause(vector);
 }
 
 // ================================================================================
@@ -145,10 +160,10 @@ void addClause(const vec<Lit>& ps){
 
 void constraintOneZero(int** prop, int i, int j) {
 	// [CAPACITE 0]
-	addUnit(~Lit(BAS));
-	addUnit(~Lit(HAUT));
-	addUnit(~Lit(DROITE));
-	addUnit(~Lit(GAUCHE));
+	addUnit(Litt(HAUT, false));
+	addUnit(Litt(BAS, false));
+	addUnit(Litt(GAUCHE, false));
+	addUnit(Litt(DROITE, false));
 }
 
 void constraintOneOne(int** prop, int i, int j) {
@@ -156,18 +171,18 @@ void constraintOneOne(int** prop, int i, int j) {
 	//                                  est équivalent à
 	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
 
-	 addBinary(~Lit(BAS), ~Lit(DROITE)); // (-B v -D)
-	 addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
-	 addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
-	 addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
-	 addBinary(~Lit(DROITE), ~Lit(HAUT)); // (-D v -H)
-	 addBinary(~Lit(GAUCHE), ~Lit(HAUT)); // (-G v -H)
+	 addBinary(Litt(BAS, false), Litt(DROITE, false)); // (-B v -D)
+	 addBinary(Litt(BAS, false), Litt(GAUCHE, false)); // (-B v -G)
+	 addBinary(Litt(BAS, false), Litt(HAUT, false)); // (-B v -H)
+	 addBinary(Litt(DROITE, false), Litt(GAUCHE, false)); // (-D v -G)
+	 addBinary(Litt(DROITE, false), Litt(HAUT, false)); // (-D v -H)
+	 addBinary(Litt(GAUCHE, false), Litt(HAUT, false)); // (-G v -H)
 
 	 vec<Lit> lits;
-	 lits.push(Lit(BAS));
-	 lits.push(Lit(DROITE));
-	 lits.push(Lit(GAUCHE));
-	 lits.push(Lit(HAUT));
+	 lits.push(Litt(BAS, true));
+	 lits.push(Litt(DROITE, true));
+	 lits.push(Litt(GAUCHE, true));
+	 lits.push(Litt(HAUT, true));
 	 addClause(lits); // (B v D v G v H)
 }
 
@@ -179,14 +194,14 @@ void constraintOneTwo(int** prop, int i, int j) {
 	// (¬B ∨ ¬D ∨ ¬G) ∧ (¬B ∨ ¬D ∨ ¬H) ∧ (¬B ∨ ¬G ∨ ¬H) ∧ (B ∨ D ∨ G) ∧ (B ∨ D ∨ H) ∧ 
 	// (B ∨ G ∨ H) ∧ (¬D ∨ ¬G ∨ ¬H) ∧ (D ∨ G ∨ H)
 
-	addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(GAUCHE)); // (¬B ∨ ¬D ∨ ¬G)
-	addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(HAUT)); // (¬B ∨ ¬D ∨ ¬H)
-	addTernary(~Lit(BAS), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬B ∨ ¬G ∨ ¬H)
-	addTernary(Lit(BAS), Lit(DROITE), Lit(GAUCHE)); // (B ∨ D ∨ G)
-	addTernary(Lit(BAS), Lit(DROITE), Lit(HAUT)); // (B ∨ D ∨ H)
-	addTernary(Lit(BAS), Lit(GAUCHE), Lit(HAUT)); // (B ∨ G ∨ H)
-	addTernary(~Lit(DROITE), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬D ∨ ¬G ∨ ¬H)
-	addTernary(Lit(DROITE), Lit(GAUCHE), Lit(HAUT)); // (D ∨ G ∨ H)
+	addTernary(Litt(BAS, false), Litt(DROITE, false), Litt(GAUCHE, false)); // (¬B ∨ ¬D ∨ ¬G)
+	addTernary(Litt(BAS, false), Litt(DROITE, false), Litt(HAUT, false)); // (¬B ∨ ¬D ∨ ¬H)
+	addTernary(Litt(BAS, false), Litt(GAUCHE, false), Litt(HAUT, false)); // (¬B ∨ ¬G ∨ ¬H)
+	addTernary(Litt(BAS, true), Litt(DROITE, true), Litt(GAUCHE, true)); // (B ∨ D ∨ G)
+	addTernary(Litt(BAS, true), Litt(DROITE, true), Litt(HAUT, true)); // (B ∨ D ∨ H)
+	addTernary(Litt(BAS, true), Litt(GAUCHE, true), Litt(HAUT, true)); // (B ∨ G ∨ H)
+	addTernary(Litt(DROITE, false), Litt(GAUCHE, false), Litt(HAUT, false)); // (¬D ∨ ¬G ∨ ¬H)
+	addTernary(Litt(DROITE, true), Litt(GAUCHE, true), Litt(HAUT, true)); // (D ∨ G ∨ H)
 
 }
 
@@ -196,38 +211,38 @@ void constraintOneThree(int** prop, int i, int j) {
 	// equivalent à ci dessous en FNC
 	//(¬B ∨ ¬D ∨ ¬G ∨ ¬H) ∧ (B ∨ D) ∧ (B ∨ G) ∧ (B ∨ H) ∧ (D ∨ G) ∧ (D ∨ H) ∧ (G ∨ H)
 
-	addBinary(Lit(BAS), Lit(DROITE)); // (B v D)
-	addBinary(Lit(BAS), Lit(GAUCHE)); // (B v G)
-	addBinary(Lit(BAS), Lit(HAUT)); // (B v H)
-	addBinary(Lit(DROITE), Lit(GAUCHE)); // (D v G)
-	addBinary(Lit(DROITE), Lit(HAUT)); // (D v H)
-	addBinary(Lit(GAUCHE), Lit(HAUT)); // (G v H)
+	addBinary(Litt(BAS, true), Litt(DROITE, true)); // (B v D)
+	addBinary(Litt(BAS, true), Litt(GAUCHE, true)); // (B v G)
+	addBinary(Litt(BAS, true), Litt(HAUT, true)); // (B v H)
+	addBinary(Litt(DROITE, true), Litt(GAUCHE, true)); // (D v G)
+	addBinary(Litt(DROITE, true), Litt(HAUT, true)); // (D v H)
+	addBinary(Litt(GAUCHE, true), Litt(HAUT, true)); // (G v H)
 
 	vec<Lit> lits;
-	lits.push(~Lit(BAS));
-    lits.push(~Lit(HAUT));
-	lits.push(~Lit(DROITE));
-	lits.push(~Lit(GAUCHE));
+	lits.push(Litt(BAS, false));
+    lits.push(Litt(HAUT, false));
+	lits.push(Litt(DROITE, false));
+	lits.push(Litt(GAUCHE, false));
 	addClause(lits); // (-B v -D v -G v -H)
 }
 
 void constraintOneFour(int** prop, int i, int j) {
 	// [CAPACITE 4]
-	addUnit(Lit(BAS));
-	addUnit(Lit(HAUT));
-	addUnit(Lit(DROITE));
-	addUnit(Lit(GAUCHE));
+	addUnit(Litt(BAS, true));
+	addUnit(Litt(HAUT, true));
+	addUnit(Litt(DROITE, true));
+	addUnit(Litt(GAUCHE, true));
 }
 
 void constraintOne(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
 			switch(capacities[i][j]) {
-				case 0: constraintOneZero(prop, i+1, j+1);  break;  // 0
-				case 1: constraintOneOne(prop, i+1, j+1);   break;  // 1
-				case 2: constraintOneTwo(prop, i+1, j+1);   break;  // 2
-				case 3: constraintOneThree(prop, i+1, j+1); break;  // 3
-				case 4: constraintOneFour(prop, i+1, j+1);  break;  // 4
+				case 0: constraintOneZero(prop, i, j);  break;  // 0
+				case 1: constraintOneOne(prop, i, j);   break;  // 1
+				case 2: constraintOneTwo(prop, i, j);   break;  // 2
+				case 3: constraintOneThree(prop, i, j); break;  // 3
+				case 4: constraintOneFour(prop, i, j);  break;  // 4
 			}
 		}
 	}
@@ -242,7 +257,7 @@ void constraintTwo(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
 			if (isWall(capacities, i,j)) {
-				addUnit(~Lit(prop[i+1][j+1]));
+				addUnit(Litt(prop, i, j, false));
 			}
 		}
 	}
@@ -262,7 +277,7 @@ void constraintThree(int **capacities, int **prop, int m, int n) {
                 FOR(k, 0, (int) hor.size() - 1) {
                     FOR(l, 0, (int) hor.size() - 1) {
                         if (k == l) continue;
-                        addBinary(~Lit(prop[i + 1][hor[k] + 1]), ~Lit(prop[i + 1][hor[l] + 1]));
+                        addBinary(Litt(prop, i, hor[k], false), Litt(prop, i, hor[l], false));
                     }
                 }
             }
@@ -271,45 +286,12 @@ void constraintThree(int **capacities, int **prop, int m, int n) {
                 FOR(k, 0, (int) vert.size() - 1) {
                     FOR(l, 0, (int) vert.size() - 1) {
                         if (k == l) continue;
-                        addBinary(~Lit(prop[vert[k] + 1][j + 1]), ~Lit(prop[vert[l] + 1][j + 1]));
+                        addBinary(Litt(prop, vert[k], j, false), Litt(prop, vert[l], j, false));
                     }
                 }
             }
         }
     }
-}
-
-
-void constraintThreeLign2(int** capacities, int** prop, int m, int n) {
-	// lignes
-	FOR(i, 0, m-1){
-		int candidate = 1;
-		int j = 0;
-		while (candidate < n-1) {
-			if (!isWall(capacities, i, candidate) and j < candidate) { // on compare les paires
-				addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[i+1][candidate+1])); // -A v -B
-			} else {
-				j = candidate + 1; // après le mur : nouveau candidat
-			}
-			candidate++;
-		}
-	}
-}
-
-void constraintThreeCol2(int** capacities, int** prop, int m, int n) {
-	// colonnes
-	FOR(j, 0, m-1){
-		int candidate = 1;
-		int i = 0;
-		while (candidate < m-1) {
-			if (!isWall(capacities, candidate, j) and i < candidate) { // on compare les paires
-				addBinary(~Lit(prop[i+1][j+1]), ~Lit(prop[candidate+1][j+1])); // -A v -B
-			} else {
-				i = candidate + 1; // après le mur : nouveau candidat
-			}
-			candidate++;
-		}
-	}
 }
 
 // ================================================================================
@@ -330,10 +312,10 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 
 	 		lits.clear();
 	 		for (int z : hor2){
-	 		    lits.push(Lit(prop[i+1][z+1]));
+	 		    lits.push(Litt(prop, i, z, true));
 	 		}
 	 		for (int z : vert2){
-	 		    lits.push(Lit(prop[z+1][j+1]));
+	 		    lits.push(Litt(prop, z, j, true));
 	 		}
 	 		addClause(lits);
 	 	}
@@ -354,7 +336,7 @@ void showResult(int** capacities, int** prop, int m, int n){
 		std::cout << "La formule est satisfaisable." << std::endl;
 		FOR(i, 0, m-1) {
 			FOR(j, 0, n-1) {
-				if (s.model[prop[i+1][j+1]] == l_True) {
+				if (s.model[prop[i][j]] == l_True) {
 					std::cout << ("\033[1;33m▲\033[0m") << "  ";
 				} else if (capacities[i][j] == -1){
 					std::cout << ("\033[1;31m■\33[0m") << "  ";
@@ -393,24 +375,15 @@ void solve(int** capacities, int m, int n, bool find_all) {
 	// Fonction à compléter pour les questions 2 et 3 (et bonus 1)
 
 
-	int** prop = new int*[m+2];
-	for (int i = 0; i < m+2; ++i) {
-		prop[i] = new int[n+2];
-		for (int j = 0; j < n+2; ++j) {
-			prop[i][j] = 0;
+	int** prop = new int*[m];
+	for (int i = 0; i < m; ++i) {
+		prop[i] = new int[n];
+		for (int j = 0; j < n; ++j) {
+			prop[i][j] = s.newVar();
 		}
 	}
-
-	FOR(i, 0, m-1) {
-		FOR(j, 0, n-1) {
-			prop[i+1][j+1] = s.newVar();
-		}
-	}
-
 
 	// ============================== CONTRAINTE 1 ====================================
-	//  constraintOneZero(capacities, prop, m, n); // [CAPACITE 0]
-	//  constraintOneOne(capacities, prop, m, n); // [CAPACITE 1]
 	constraintOne(capacities, prop, m, n);
 	
 	// ============================== CONTRAINTE 2 ====================================
