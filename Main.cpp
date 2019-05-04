@@ -95,9 +95,7 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
 
 void constraintOneZero(int** prop, int i, int j) {
 	// [CAPACITE 0]
-
-	std::cout <<"dans one zero ";
-
+	std::cout << "[0]";
 	s.addUnit(~Lit(prop[i+1][j]));
 	s.addUnit(~Lit(prop[i-1][j]));
 	s.addUnit(~Lit(prop[i][j+1]));
@@ -109,7 +107,7 @@ void constraintOneOne(int** prop, int k, int l) {
 	//                                  est équivalent à
 	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
 
-	std::cout << "dans one one";
+	std::cout << "[1]";
 	 s.addBinary(~Lit(prop[k+1][l]), ~Lit(prop[k][l-1])); // (-B v -G)
 	 s.addBinary(~Lit(prop[k+1][l]), ~Lit(prop[k-1][l])); // (-B v -H)
 	 s.addBinary(~Lit(prop[k][l+1]), ~Lit(prop[k][l-1])); // (-D v -G)
@@ -132,6 +130,7 @@ void constraintOneTwo(int** prop, int i, int j) {
 	// (¬B ∨ ¬D ∨ ¬G) ∧ (¬B ∨ ¬D ∨ ¬H) ∧ (¬B ∨ ¬G ∨ ¬H) ∧ (B ∨ D ∨ G) ∧ (B ∨ D ∨ H) ∧ 
 	// (B ∨ G ∨ H) ∧ (¬D ∨ ¬G ∨ ¬H) ∧ (D ∨ G ∨ H)
 
+	std::cout << "[2]";
 	s.addTernary(~Lit(prop[i+1][j]), ~Lit(prop[i][j+1]), ~Lit(prop[i][j-1])); // (¬B ∨ ¬D ∨ ¬G)
 	s.addTernary(~Lit(prop[i+1][j]), ~Lit(prop[i][j+1]), ~Lit(prop[i-1][j])); // (¬B ∨ ¬D ∨ ¬H)
 	s.addTernary(~Lit(prop[i+1][j]), ~Lit(prop[i][j-1]), ~Lit(prop[i-1][j])); // (¬B ∨ ¬G ∨ ¬H)
@@ -149,6 +148,7 @@ void constraintOneThree(int** prop, int i, int j) {
 	// equivalent à ci dessous en FNC
 	//(¬B ∨ ¬D ∨ ¬G ∨ ¬H) ∧ (B ∨ D) ∧ (B ∨ G) ∧ (B ∨ H) ∧ (D ∨ G) ∧ (D ∨ H) ∧ (G ∨ H)
 
+	std::cout << "[3]";
 	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i][j+1])); // (B v D)
 	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i][j-1])); // (B v G)
 	s.addBinary(Lit(prop[i+1][j]), Lit(prop[i-1][j])); // (B v H)
@@ -166,6 +166,7 @@ void constraintOneThree(int** prop, int i, int j) {
 
 void constraintOneFour(int** prop, int i, int j) {
 	// [CAPACITE 4]
+	std::cout << "[4]";
 	s.addUnit(Lit(prop[i+1][j]));
 	s.addUnit(Lit(prop[i-1][j]));
 	s.addUnit(Lit(prop[i][j+1]));
@@ -178,7 +179,7 @@ void constraintOne(int** capacities, int** prop, int m, int n) {
 			switch(capacities[i][j]) {
 				case 0: constraintOneZero(prop, i+1, j+1);  break;  // 0
 				case 1: constraintOneOne(prop, i+1, j+1);   break;  // 1
-				case 2: constraintOneTwo(prop, i+1, j+1);   break;  // 2
+				// case 2: constraintOneTwo(prop, i+1, j+1);   break;  // 2
 				case 3: constraintOneThree(prop, i+1, j+1); break;  // 3
 				case 4: constraintOneFour(prop, i+1, j+1);  break;  // 4
 			}
@@ -362,8 +363,6 @@ void solve(int** capacities, int m, int n, bool find_all) {
 	}
 
 	// ============================== CONTRAINTE 1 ====================================
-	//  constraintOneZero(capacities, prop, m, n); // [CAPACITE 0]
-	//  constraintOneOne(capacities, prop, m, n); // [CAPACITE 1]
 	constraintOne(capacities, prop, m, n);
 	
 	// ============================== CONTRAINTE 2 ====================================
