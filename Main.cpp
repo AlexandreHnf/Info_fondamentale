@@ -67,12 +67,9 @@ std::vector<int> getHorizontalInterval(int **capacities, int i, int j, int m, in
         } else break;
     }
     std::vector<int> res;
-	// std::cout << "interval horizontal pour" << i <<"," <<j << "\n";
     for (int z = inf_j+1; z <= sup_j-1; ++z){
         res.push_back(z);
-		// std::cout << z << ",";
     }
-	// std::cout << std::endl;
     return res;
 }
 
@@ -91,12 +88,9 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
         } else break;
     }
     std::vector<int> res;
-	// std::cout << "interval vertical pour " << i <<"," <<j << "\n";
     for (int z = inf_i+1; z <= sup_i-1; ++z){
         res.push_back(z);
-		// std::cout << z << ",";
     }
-	// std::cout << std::endl;
     return res;
 }
 
@@ -114,12 +108,9 @@ std::vector<int> getIJFromLit(const Lit& p){
 void addClause(const vec<Lit>& ps){
     s.addClause(ps);
     for (int i = 0; i < ps.size(); i++){
-        // getIJFromLit(ps[i]);
         if (i != ps.size() -1) {
-            // std::cout << " v ";
         }
     }
-    // std::cout << std::endl;
 }
 
 void addUnit(Lit p){
@@ -150,15 +141,10 @@ void addTernary(Lit p, Lit q, Lit r){
 
 void constraintOneZero(int** prop, int i, int j) {
 	// [CAPACITE 0]
-	// std::cout << "ij: " << i-1 << ", " << j-1;
 	addUnit(~Lit(BAS));
-	// std::cout << "bas"<< i+1-1 << ", " << j-1;
 	addUnit(~Lit(HAUT));
-	// std::cout << "haut"<< i-1-1 << ", " << j-1;
 	addUnit(~Lit(DROITE));
-	// std::cout << "droite"<< i-1 << ", " << j+1-1;
 	addUnit(~Lit(GAUCHE));
-	// std::cout << "gauche"<< i-1 << ", " << j-1-1;
 }
 
 void constraintOneOne(int** prop, int i, int j) {
@@ -321,9 +307,9 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 
 // ================================================================================
 // ============================== CONTRAINTE SUPP =================================
-// Ajoute des contraintes sur les cases non affichées.
-// Elles ne peuvent pas contenir d'ampoules.
-// Pas utile dans le rapport.
+// ========== Ajoute des contraintes sur les cases non affichées.==================
+// =================Elles ne peuvent pas contenir d'ampoules.======================
+// =======================Pas utile dans le rapport.===============================
 // ================================================================================
 
 
@@ -336,6 +322,25 @@ void constraintSupp(int** capacities, int** prop, int m, int n){
         }
     }
 }
+
+// ================================================================================
+// =========================== Calcule les contraintes ============================
+// ================================================================================
+
+void setupConstraints(int** capacities, int** prop, int m, int n) {
+	// ============================== CONTRAINTE 1 ====================================
+	constraintOne(capacities, prop, m, n);
+	// ============================== CONTRAINTE 2 ====================================
+	constraintTwo(capacities, prop, m, n);
+	// ============================== CONTRAINTE 3 ====================================
+	constraintThree(capacities, prop, m, n);
+	// ============================== CONTRAINTE 4 ====================================
+	constraintFour(capacities, prop, m, n);
+	// ============================== CONTRAINTE SUPP ====================================
+	constraintSupp(capacities, prop, m, n);
+}
+
+
 
 
 // ================================================================================
@@ -374,6 +379,38 @@ void showResult(int** capacities, int** prop, int m, int n){
 	}
 }
 
+bool existSolution() {
+	return s.okay(); // renvoie true si y'a une solution, false sinon
+}
+
+int** newPropositions(int m, int n) {
+	// reset la solution (prop)
+	int** prop = new int*[m+2];
+	for (int i = 0; i < m+2; ++i) {
+		prop[i] = new int[n+2];
+		for (int j = 0; j < n+2; ++j) {
+			prop[i][j] = 0;
+			prop[i][j] = s.newVar();
+		}
+	}
+	// FOR(i, 0, m) {
+	// 	FOR(j, 0, n) {
+	// 		prop[i][j] = s.newVar();
+	// 	}
+	// }
+	return prop;
+}
+
+void forbidSolution(int** prop, int m, int n) {
+	// contraint la solution pour ne plus l'avoir par après
+	FOR(i, 0, m-1) {
+		FOR(j, 0, n-1) {
+			if (s.model[prop[i+1][j+1]] == l_True) { // ampoule
+				s.addUnit(~Lit(prop[i+1][j+1]));
+			}
+		}
+	}
+}
 
  
 /**
@@ -385,51 +422,28 @@ void showResult(int** capacities, int** prop, int m, int n){
  */  
 void solve(int** capacities, int m, int n, bool find_all) {
 	pretty_print(capacities, m, n);
-	// std::cout << std::endl;
+	// std::cout << std::endl;	
 
-	// Fonction à compléter pour les questions 2 et 3 (et bonus 1)
+	int** prop = newPropositions(m, n);
 
-
-	int** prop = new int*[m+2];
-	for (int i = 0; i < m+2; ++i) {
-		prop[i] = new int[n+2];
-		for (int j = 0; j < n+2; ++j) {
-			prop[i][j] = 0;
-		}
-	}
-
-	FOR(i, 0, m) {
-		FOR(j, 0, n) {
-			prop[i][j] = s.newVar();
-		}
-	}
-
-
-	// ============================== CONTRAINTE 1 ====================================
-	constraintOne(capacities, prop, m, n);
-	
-	// ============================== CONTRAINTE 2 ====================================
-	constraintTwo(capacities, prop, m, n);
-
-	// ============================== CONTRAINTE 3 ====================================
-    constraintThree(capacities, prop, m, n);
-
-	// ============================== CONTRAINTE 4 ====================================
-	constraintFour(capacities, prop, m, n);
-
-    // ============================== CONTRAINTE SUPP ====================================
-    constraintSupp(capacities, prop, m, n);
+	setupConstraints(capacities, prop, m, n); // Contraintes
 
 	// ============================ SOLVE ==================================
-	s.solve();
-	showResult(capacities, prop, m, n);
+	// s.solve();
+	// showResult(capacities, prop, m, n);
 
-	// One, two, three, one, two, three, drink
-	// One, two, three, one, two, three, drink
-	// One, two, three, one, two, three, drink
-	// Throw em back, till I lose count
-	// IIIIIIIIIIIIIIIIIIIIIIII'm gonna swing from the chandelier, from the chandeliiiiiiiier
-	// (musique de SIA mdr)
+	while (true) {
+		s.solve();
+		if (!existSolution()) { // si plus de solution
+			std::cout << "y'a plus de solution\n";
+			break;
+		}
+
+		showResult(capacities, prop, m, n);
+		forbidSolution(prop, m, n); // contraint la solution pour ne plus l'avoir apres
+		prop = newPropositions(m, n);
+		if (not find_all) {break;} // Si on veut qu'une solution
+	}
 }
 
 /**
