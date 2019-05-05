@@ -391,8 +391,10 @@ int** newPropositions(int m, int n) {
 		for (int j = 0; j < n+2; ++j) {
 			prop[i][j] = 0;
 			prop[i][j] = s.newVar();
+			std::cout << prop[i][j] << ",";
 		}
 	}
+	std::cout << std::endl;
 	// FOR(i, 0, m) {
 	// 	FOR(j, 0, n) {
 	// 		prop[i][j] = s.newVar();
@@ -400,6 +402,7 @@ int** newPropositions(int m, int n) {
 	// }
 	return prop;
 }
+
 
 void forbidSolution(int** prop, int m, int n) {
 	// contraint la solution pour ne plus l'avoir par après
@@ -441,7 +444,8 @@ void solve(int** capacities, int m, int n, bool find_all) {
 
 		showResult(capacities, prop, m, n);
 		forbidSolution(prop, m, n); // contraint la solution pour ne plus l'avoir apres
-		prop = newPropositions(m, n);
+		// prop = newPropositions(m, n);
+		s.model.clear();
 		if (not find_all) {break;} // Si on veut qu'une solution
 	}
 }
