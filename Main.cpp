@@ -128,6 +128,12 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
     return res;
 }
 
+std::vector<int> voisins(int i, int j) {
+	// renvoie une liste avec les positions des 4 cases voisines de la case (i,j)
+	std::vector<int> res = {i-1, i+1, i, i, j, j, j-1, j+1}; // i puis j correspondants
+	return res;
+}
+
 // ================================================================================
 // ============================== CONTRAINTE 1 ====================================
 // ============== Chaque mur a 0, 1, 2, 3 our 4 ampoule(s) autour =================
@@ -141,15 +147,16 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
  */
 void constraintOneZero(int** prop, int i, int j) {
     // (~H && ~B && ~G && ~D)
-	s.addUnit(~Lit(BAS));
-	s.addUnit(~Lit(HAUT));
-	s.addUnit(~Lit(DROITE));
-	s.addUnit(~Lit(GAUCHE));
-}
+	// s.addUnit(~Lit(BAS));
+	// s.addUnit(~Lit(HAUT));
+	// s.addUnit(~Lit(DROITE));
+	// s.addUnit(~Lit(GAUCHE));
 
-std::vector<int> voisins(int i, int j) {
-	std::vector<int> res = {i-1, i+1, i, i, j, j, j-1, j+1}; // i puis j correspondants
-	return res;
+	std::vector<int> v = voisins(i,j);
+
+	FOR(l, 0, 3) {
+		s.addUnit(~Lit(prop[ v[l] ][ v[l+4] ])); // Aucune des case autour n'a d'ampoule
+	}
 }
 
 /**
@@ -159,43 +166,24 @@ std::vector<int> voisins(int i, int j) {
  * @param  j: index column j
  */
 void constraintOneOne(int** prop, int i, int j) {
-    // (H && ~B && ~G && ~D) || (~H && B && ~G && ~D) || (~H && ~B && G && ~D) || (~H && ~B && ~G && D)
-	//                                  est équivalent à
-	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
-
-	addBinary(~Lit(BAS), ~Lit(DROITE)); // (-B v -D)
-	addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
-	addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
-	addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
-	addBinary(~Lit(DROITE), ~Lit(HAUT)); // (-D v -H)
-	addBinary(~Lit(GAUCHE), ~Lit(HAUT)); // (-G v -H)
-
-	vec<Lit> lits;
-	lits.push(Lit(BAS));
-	lits.push(Lit(DROITE));
-	lits.push(Lit(GAUCHE));
-	lits.push(Lit(HAUT));
-	addClause(lits); // (B v D v G v H)
-	
-
-	// VERSION GENERIQUE
 
 	std::vector<int> v = voisins(i,j); // voisins dans prop, de i et j
 							// [0, 1, 2, 3,    4, 5, 6, 7]
 
-	// // Au plus une ampoule autour
-	// FOR(k, 0, 3) {
-	// 	FOR(l, 0, 3) { // v[k+4] = le j correspondant au k (i)
-	// 		s.addBinary(~Lit(prop[ v[k] ][ v[k+4] ]), ~Lit(prop[ v[l] ][ v[l+4] ]));
-	// 	}
-	// }
+	// Au plus une ampoule autour
+	FOR(k, 0, 3) {
+		FOR(l, 0, 3) { // v[k+4] = le j correspondant au k (i)
+			if (l == k) {continue;}
+			s.addBinary(~Lit(prop[ v[k] ][ v[k+4] ]), ~Lit(prop[ v[l] ][ v[l+4] ]));
+		}
+	}
 
 	// Au moins une ampoule autour
-	// vec<Lit> lits;
-	// FOR(l, 0, 3) {
-	// 	lits.push(Lit(prop[ v[l] ][ v[l+4] ]));
-	// }
-	// s.addClause(lits); // H v B v G v D			
+	vec<Lit> lits;
+	FOR(l, 0, 3) {
+		lits.push(Lit(prop[ v[l] ][ v[l+4] ]));
+	}
+	s.addClause(lits); // H v B v G v D			
 
 }
 
