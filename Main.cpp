@@ -1,22 +1,27 @@
-/* 000440761 - HENEFFE Alexandre
+/*
+ * 000440761 - HENEFFE Alexandre
  * 000443812 - GOMES RODRIGUES Ricardo
- * 
  */
 #include <iostream>
 #include <vector>
-#include <string>
-#include <fstream>
-#include <streambuf>
 #include "Solver.hpp"
-#define FOR(k,lb,ub) for (int k = lb; k <= ub; k++)
-#define HAUT prop[i-1][j]
-#define BAS prop[i+1][j]
-#define GAUCHE prop[i][j-1]
-#define DROITE prop[i][j+1]
 
+//Macros pour simplifier la lecture du code
+#define FOR(k,lb,ub) for (int k = lb; k <= ub; k++) //borne supérieure comprise
+#define HAUT prop[i-1][j]    //case au-dessus de (i, j)
+#define BAS prop[i+1][j]     //case en-dessous de (i, j)
+#define GAUCHE prop[i][j-1]  //case à gauche de (i, j)
+#define DROITE prop[i][j+1]  //case à droite de (i, j)
+
+// Solver MiniSAT, en variable global pour pouvoir l'utiliser dans toutes
+// les fonctions sans devoir le passer en paramètre à chaque fois.
 Solver s;
-int M = 0;
-int N = 0;
+
+
+// ================================================================================
+// ========================== FONCTIONS UTILES ====================================
+// =============== Ensemble de fonctions utiles pour plus tard ====================
+// ================================================================================
 
 /**
  * Pretty prints the given matrix
@@ -47,11 +52,29 @@ void pretty_print(int** matrix, int m, int n) {
 	}
 }
 
+/**
+ * @param  capacities: matrix of capacities
+ * @param  i: index line i
+ * @param  j: index column j
+ * @return true is the case (i, j) is a wall
+ */
 bool isWall(int** capacities, int i, int j){
 	return capacities[i][j] == -1 or capacities[i][j] == 0 or capacities[i][j] == 1
 	or capacities[i][j] == 2 or capacities[i][j] == 3 or capacities[i][j] == 4;
 }
 
+
+/**
+ * Cherche l'intervalle dans lequel se trouve une case (horizontalement)
+ * Exemple :  M V V C V M (M=Mur, V=Vide, C=Case actuelle) va retourner
+ * un vecteur avec [1, 2, 3, 4] car nous avons un mur en 0 et en 5.
+ * @param  capacities: matrix of capacities
+ * @param  i: index line i
+ * @param  j: index column j
+ * @param  m: capacities height
+ * @param  n: capacities width
+ * @return vector of integers
+ */
 std::vector<int> getHorizontalInterval(int **capacities, int i, int j, int m, int n) {
     // get the horizontal interval in which a cell is
     int inf_j = j;
@@ -73,6 +96,17 @@ std::vector<int> getHorizontalInterval(int **capacities, int i, int j, int m, in
     return res;
 }
 
+/**
+ * Cherche l'intervalle dans lequel se trouve une case (verticalement)
+ * Exemple :  M V V C V M (M=Mur, V=Vide, C=Case actuelle) va retourner
+ * un vecteur avec [1, 2, 3, 4] car nous avons un mur en 0 et en 5.
+ * @param  capacities: matrix of capacities
+ * @param  i: index line i
+ * @param  j: index column j
+ * @param  m: capacities height
+ * @param  n: capacities width
+ * @return vector of integers
+ */
 std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int n) {
     // get the vertical interval in which a cell is
     int inf_i = i;
@@ -94,57 +128,23 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
     return res;
 }
 
-std::vector<int> getIJFromLit(const Lit& p){
-	// std::cout << var(p);
-    if (sign(p))
-        std::cout << "-";
-    int j = (var(p)%N) ;
-    int i = (var(p) - j ) / M;
-    i++; j++;
-    std::cout << var(p) << "(" << i << j<< ")";
-    return std::vector<int> {i, j};
-}
-
-void addClause(const vec<Lit>& ps){
-    s.addClause(ps);
-    for (int i = 0; i < ps.size(); i++){
-        if (i != ps.size() -1) {
-        }
-    }
-}
-
-void addUnit(Lit p){
-    vec<Lit> vector;
-    vector.push(p);
-    addClause(vector);
-}
-
-void addBinary(Lit p, Lit q){
-    vec<Lit> vector;
-    vector.push(p);
-    vector.push(q);
-    addClause(vector);
-}
-
-void addTernary(Lit p, Lit q, Lit r){
-    vec<Lit> vector;
-    vector.push(p);
-    vector.push(q);
-    vector.push(r);
-    addClause(vector);
-}
-
 // ================================================================================
 // ============================== CONTRAINTE 1 ====================================
-// =================== Chaque mur a 0 ou 1 ampoule autour =========================
+// ============== Chaque mur a 0, 1, 2, 3 our 4 ampoule(s) autour =================
 // ================================================================================
 
+/**
+ * Contrainte 1.0 : 0 ampoule autour
+ * @param  prop: matrix of prop
+ * @param  i: index line i
+ * @param  j: index column j
+ */
 void constraintOneZero(int** prop, int i, int j) {
-	// [CAPACITE 0]
-	addUnit(~Lit(BAS));
-	addUnit(~Lit(HAUT));
-	addUnit(~Lit(DROITE));
-	addUnit(~Lit(GAUCHE));
+    // (~H && ~B && ~G && ~D)
+	s.addUnit(~Lit(BAS));
+	s.addUnit(~Lit(HAUT));
+	s.addUnit(~Lit(DROITE));
+	s.addUnit(~Lit(GAUCHE));
 }
 
 std::vector<int> voisins(int i, int j) {
@@ -152,24 +152,30 @@ std::vector<int> voisins(int i, int j) {
 	return res;
 }
 
+/**
+ * Contrainte 1.1 : 1 ampoule autour
+ * @param  prop: matrix of prop
+ * @param  i: index line i
+ * @param  j: index column j
+ */
 void constraintOneOne(int** prop, int i, int j) {
     // (H && ~B && ~G && ~D) || (~H && B && ~G && ~D) || (~H && ~B && G && ~D) || (~H && ~B && ~G && D)
 	//                                  est équivalent à
 	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
 
-	// addBinary(~Lit(BAS), ~Lit(DROITE)); // (-B v -D)
-	// addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
-	// addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
-	// addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
-	// addBinary(~Lit(DROITE), ~Lit(HAUT)); // (-D v -H)
-	// addBinary(~Lit(GAUCHE), ~Lit(HAUT)); // (-G v -H)
+	addBinary(~Lit(BAS), ~Lit(DROITE)); // (-B v -D)
+	addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
+	addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
+	addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
+	addBinary(~Lit(DROITE), ~Lit(HAUT)); // (-D v -H)
+	addBinary(~Lit(GAUCHE), ~Lit(HAUT)); // (-G v -H)
 
-	// vec<Lit> lits;
-	// lits.push(Lit(BAS));
-	// lits.push(Lit(DROITE));
-	// lits.push(Lit(GAUCHE));
-	// lits.push(Lit(HAUT));
-	// addClause(lits); // (B v D v G v H)
+	vec<Lit> lits;
+	lits.push(Lit(BAS));
+	lits.push(Lit(DROITE));
+	lits.push(Lit(GAUCHE));
+	lits.push(Lit(HAUT));
+	addClause(lits); // (B v D v G v H)
 	
 
 	// VERSION GENERIQUE
@@ -185,62 +191,85 @@ void constraintOneOne(int** prop, int i, int j) {
 	// }
 
 	// Au moins une ampoule autour
-	vec<Lit> lits;
-	FOR(l, 0, 3) {
-		lits.push(Lit(prop[ v[l] ][ v[l+4] ]));
-	}
-	s.addClause(lits); // H v B v G v D			
+	// vec<Lit> lits;
+	// FOR(l, 0, 3) {
+	// 	lits.push(Lit(prop[ v[l] ][ v[l+4] ]));
+	// }
+	// s.addClause(lits); // H v B v G v D			
 
 }
 
+/**
+ * Contrainte 1.2 : 2 ampoules autour
+ * @param  prop: matrix of prop
+ * @param  i: index line i
+ * @param  j: index column j
+ */
 void constraintOneTwo(int** prop, int i, int j) {
-	// [CAPACITE 2]
 	// (H ∧ B ∧ ¬G ∧ ¬D) ∨ (¬H ∧ ¬B ∧ G ∧ D) ∨ (H ∧ ¬B ∧ ¬G ∧ D) ∨ (¬H ∧ B ∧ ¬G ∧ D) ∨
 	//  (¬H ∧ B ∧ G ∧ ¬D) ∨ (H ∧ ¬B ∧ G ∧ ¬D)
 	// equivalent à ci dessous en FNC
 	// (¬B ∨ ¬D ∨ ¬G) ∧ (¬B ∨ ¬D ∨ ¬H) ∧ (¬B ∨ ¬G ∨ ¬H) ∧ (B ∨ D ∨ G) ∧ (B ∨ D ∨ H) ∧ 
 	// (B ∨ G ∨ H) ∧ (¬D ∨ ¬G ∨ ¬H) ∧ (D ∨ G ∨ H)
 
-	addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(GAUCHE)); // (¬B ∨ ¬D ∨ ¬G)
-	addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(HAUT)); // (¬B ∨ ¬D ∨ ¬H)
-	addTernary(~Lit(BAS), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬B ∨ ¬G ∨ ¬H)
-	addTernary(Lit(BAS), Lit(DROITE), Lit(GAUCHE)); // (B ∨ D ∨ G)
-	addTernary(Lit(BAS), Lit(DROITE), Lit(HAUT)); // (B ∨ D ∨ H)
-	addTernary(Lit(BAS), Lit(GAUCHE), Lit(HAUT)); // (B ∨ G ∨ H)
-	addTernary(~Lit(DROITE), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬D ∨ ¬G ∨ ¬H)
-	addTernary(Lit(DROITE), Lit(GAUCHE), Lit(HAUT)); // (D ∨ G ∨ H)
+	s.addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(GAUCHE)); // (¬B ∨ ¬D ∨ ¬G)
+	s.addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(HAUT)); // (¬B ∨ ¬D ∨ ¬H)
+	s.addTernary(~Lit(BAS), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬B ∨ ¬G ∨ ¬H)
+	s.addTernary(Lit(BAS), Lit(DROITE), Lit(GAUCHE)); // (B ∨ D ∨ G)
+	s.addTernary(Lit(BAS), Lit(DROITE), Lit(HAUT)); // (B ∨ D ∨ H)
+	s.addTernary(Lit(BAS), Lit(GAUCHE), Lit(HAUT)); // (B ∨ G ∨ H)
+	s.addTernary(~Lit(DROITE), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬D ∨ ¬G ∨ ¬H)
+	s.addTernary(Lit(DROITE), Lit(GAUCHE), Lit(HAUT)); // (D ∨ G ∨ H)
 
 }
 
+/**
+ * Contrainte 1.3 : 3 ampoules autour
+ * @param  prop: matrix of prop
+ * @param  i: index line i
+ * @param  j: index column j
+ */
 void constraintOneThree(int** prop, int i, int j) {
-	// [CAPACITE 3]
 	// (H ∧ B ∧ ¬G ∧ D) ∨ (¬H ∧ B ∧ G ∧ D) ∨ (H ∧ B ∧ G ∧ ¬D) ∨ (H ∧ ¬B ∧ G ∧ D)
 	// equivalent à ci dessous en FNC
 	//(¬B ∨ ¬D ∨ ¬G ∨ ¬H) ∧ (B ∨ D) ∧ (B ∨ G) ∧ (B ∨ H) ∧ (D ∨ G) ∧ (D ∨ H) ∧ (G ∨ H)
 
-	addBinary(Lit(BAS), Lit(DROITE)); // (B v D)
-	addBinary(Lit(BAS), Lit(GAUCHE)); // (B v G)
-	addBinary(Lit(BAS), Lit(HAUT)); // (B v H)
-	addBinary(Lit(DROITE), Lit(GAUCHE)); // (D v G)
-	addBinary(Lit(DROITE), Lit(HAUT)); // (D v H)
-	addBinary(Lit(GAUCHE), Lit(HAUT)); // (G v H)
+	s.addBinary(Lit(BAS), Lit(DROITE)); // (B v D)
+	s.addBinary(Lit(BAS), Lit(GAUCHE)); // (B v G)
+	s.addBinary(Lit(BAS), Lit(HAUT)); // (B v H)
+	s.addBinary(Lit(DROITE), Lit(GAUCHE)); // (D v G)
+	s.addBinary(Lit(DROITE), Lit(HAUT)); // (D v H)
+	s.addBinary(Lit(GAUCHE), Lit(HAUT)); // (G v H)
 
 	vec<Lit> lits;
 	lits.push(~Lit(BAS));
     lits.push(~Lit(HAUT));
 	lits.push(~Lit(DROITE));
 	lits.push(~Lit(GAUCHE));
-	addClause(lits); // (-B v -D v -G v -H)
+	s.addClause(lits); // (-B v -D v -G v -H)
 }
 
+/**
+ * Contrainte 1.4 : 4 ampoules autour
+ * @param  prop: matrix of prop
+ * @param  i: index line i
+ * @param  j: index column j
+ */
 void constraintOneFour(int** prop, int i, int j) {
-	// [CAPACITE 4]
-	addUnit(Lit(BAS));
-	addUnit(Lit(HAUT));
-	addUnit(Lit(DROITE));
-	addUnit(Lit(GAUCHE));
+	// (H ∧ B ∧ ¬G ∧ D)
+	s.addUnit(Lit(BAS));
+	s.addUnit(Lit(HAUT));
+	s.addUnit(Lit(DROITE));
+	s.addUnit(Lit(GAUCHE));
 }
 
+/**
+ * Contrainte 1 : avoir x ampoules autour
+ * @param  capacities: matrix of capacities
+ * @param  prop: matrix of prop
+ * @param  m: capacities height
+ * @param  n: capacities width
+ */
 void constraintOne(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
@@ -260,11 +289,18 @@ void constraintOne(int** capacities, int** prop, int m, int n) {
 // ======================== Pas d'ampoule sur un mur ==============================
 // ================================================================================
 
+/**
+ * Contrainte 2 : pas d'ampoule sur un mur.
+ * @param  capacities: matrix of capacities
+ * @param  prop: matrix of prop
+ * @param  m: capacities height
+ * @param  n: capacities width
+ */
 void constraintTwo(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
 			if (isWall(capacities, i,j)) {
-				addUnit(~Lit(prop[i+1][j+1]));
+				s.addUnit(~Lit(prop[i+1][j+1]));
 			}
 		}
 	}
@@ -275,25 +311,36 @@ void constraintTwo(int** capacities, int** prop, int m, int n) {
 // =================== 2 ampoules ne s'éclairement pas ============================
 // ================================================================================
 
-
+/**
+ * Contrainte 3 : 2 ampoules ne peuvent s'éclairer
+ * Explication : pour chaque case, on va regarder dans quel intervalle horizontal
+ * et vertical où elle se trouve. Dans cet intervalle, on va faire en sorte qu'on
+ * ait pas deux ampoules. Pour cela, nous prenons chaque paire possible de deux
+ * cases dans cet intervalle, et nous ajoutons une clause pour dire que les deux
+ * ne cases ne peuvent pas être illuminées en même temps.
+ * @param  capacities: matrix of capacities
+ * @param  prop: matrix of prop
+ * @param  m: capacities height
+ * @param  n: capacities width
+ */
 void constraintThree(int **capacities, int **prop, int m, int n) {
     FOR(i, 0, m-1){
         FOR(j, 0, n-1) {
             std::vector<int> hor = getHorizontalInterval(capacities, i, j, m, n);
-            if ((int) hor.size() >= 2) {
+            if ((int) hor.size() > 1) { //si qu'une case, elle n'aura pas d'ampoule en face
                 FOR(k, 0, (int) hor.size() - 1) {
                     FOR(l, 0, (int) hor.size() - 1) {
                         if (k == l) continue;
-                        addBinary(~Lit(prop[i + 1][hor[k] + 1]), ~Lit(prop[i + 1][hor[l] + 1]));
+                        s.addBinary(~Lit(prop[i + 1][hor[k] + 1]), ~Lit(prop[i + 1][hor[l] + 1]));
                     }
                 }
             }
             std::vector<int> vert = getVerticalInterval(capacities, i, j, m, n);
-            if ((int) vert.size() >= 2) {
+            if ((int) vert.size() > 1) { //si qu'une case, elle n'aura pas d'ampoule en face
                 FOR(k, 0, (int) vert.size() - 1) {
                     FOR(l, 0, (int) vert.size() - 1) {
                         if (k == l) continue;
-                        addBinary(~Lit(prop[vert[k] + 1][j + 1]), ~Lit(prop[vert[l] + 1][j + 1]));
+                        s.addBinary(~Lit(prop[vert[k] + 1][j + 1]), ~Lit(prop[vert[l] + 1][j + 1]));
                     }
                 }
             }
@@ -307,6 +354,18 @@ void constraintThree(int **capacities, int **prop, int m, int n) {
 // =================== Toutes les cases sont éclairées ============================
 // ================================================================================
 
+/**
+ * Contrainte 4 : toutes les cases doivent être éclairées
+ * Explication : pour chaque case, on va regarder dans quel intervalle horizontal
+ * et vertical où elle se trouve. On va ajouter toutes ces cases présentes dans
+ * les intervalles dans une clause (donc 'OU') et l'ajouter au solveur. Ainsi, on
+ * dit à la case qu'elle doit être illuminée par une ampoule présente dans le
+ * même intervalle (horizontal OU vertical) qu'elle.
+ * @param  capacities: matrix of capacities
+ * @param  prop: matrix of prop
+ * @param  m: capacities height
+ * @param  n: capacities width
+ */
 void constraintFour(int** capacities, int** prop, int m, int n) {
     vec<Lit> lits;
 	 FOR(i, 0, m-1) {
@@ -315,17 +374,17 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 	 			continue;
 	 		}
 
-	 		std::vector<int> vert2 = getVerticalInterval(capacities, i, j, m, n);
-	 		std::vector<int> hor2 = getHorizontalInterval(capacities, i, j, m, n);
+	 		std::vector<int> verticalInterval = getVerticalInterval(capacities, i, j, m, n);
+	 		std::vector<int> horizontalInterval = getHorizontalInterval(capacities, i, j, m, n);
 
 	 		lits.clear();
-	 		for (int z : hor2){
+	 		for (int z : horizontalInterval){
 	 		    lits.push(Lit(prop[i+1][z+1]));
 	 		}
-	 		for (int z : vert2){
+	 		for (int z : verticalInterval){
 	 		    lits.push(Lit(prop[z+1][j+1]));
 	 		}
-	 		addClause(lits);
+	 		s.addClause(lits);
 	 	}
 	 }
 }
@@ -338,12 +397,25 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 // =======================Pas utile dans le rapport.===============================
 // ================================================================================
 
-
+/**
+ * Contrainte supplémentaire non présente dans le rapport, car elle est basée sur
+ * notre implémentation du code.
+ * Explication : nous avons fait en sorte que prop ait un "bord" non visible en plus
+ * par rapport à capacities. Ainsi, nous devons pas vérifier que HAUT, BAS, GAUCHE,
+ * DROITE soient des cases existantes (exemple si i=0, j=0, alors HAUT: i=-1, j=0,
+ * causerait une erreur). Mais en faisant cela, il se peut que Minisat mette une
+ * ampoule dans le bord (donc non-visible), ce que nous n'aurorisons pas grâce à
+ * cette contrainte supplémentaire précisant que le bord ne peut contenir d'ampoules.
+ * @param  capacities: matrix of capacities
+ * @param  prop: matrix of prop
+ * @param  m: capacities height
+ * @param  n: capacities width
+ */
 void constraintSupp(int** capacities, int** prop, int m, int n){
     FOR(i, 0, m+1){
         FOR(j, 0, n+1){
             if (i == 0 or j == 0 or i == m+1 or j == n+1){
-                addUnit(~Lit(prop[i][j]));
+                s.addUnit(~Lit(prop[i][j]));
             }
         }
     }
@@ -353,6 +425,13 @@ void constraintSupp(int** capacities, int** prop, int m, int n){
 // =========================== Calcule les contraintes ============================
 // ================================================================================
 
+/**
+ * Fonction appellant toutes les contraintes.
+ * @param  capacities: matrix of capacities
+ * @param  prop: matrix of prop
+ * @param  m: capacities height
+ * @param  n: capacities width
+ */
 void setupConstraints(int** capacities, int** prop, int m, int n) {
 	// ============================== CONTRAINTE 1 ====================================
 	constraintOne(capacities, prop, m, n);
@@ -362,21 +441,26 @@ void setupConstraints(int** capacities, int** prop, int m, int n) {
 	constraintThree(capacities, prop, m, n);
 	// ============================== CONTRAINTE 4 ====================================
 	constraintFour(capacities, prop, m, n);
-	// ============================== CONTRAINTE SUPP ====================================
+	// ============================== CONTRAINTE SUPP =================================
 	constraintSupp(capacities, prop, m, n);
 }
 
+// ===============================================================================
+// ================================== SOLVE ======================================
+// ================== Fonctions pour solutionner le problème =====================
+// ==================== et gérer l'affichage des solutions. ======================
+// ===============================================================================
 
-
-
-// ================================================================================
-// =============================== SHOW RESULT ====================================
-// ================================================================================
-
+/**
+ * Fonction affichant le résultat du solve de Minisat.
+ * @param  capacities: matrix of capacities
+ * @param  prop: matrix of prop
+ * @param  m: capacities height
+ * @param  n: capacities width
+ */
 void showResult(int** capacities, int** prop, int m, int n){
-
 	if (!s.okay()) {
-		std::cout << "Il n'y a pas de solution sale pute." << std::endl;
+		std::cout << "Il n'y a pas de solution." << std::endl;
 	}
 	else {
 		std::cout << "La formule est satisfaisable." << std::endl;
@@ -405,38 +489,49 @@ void showResult(int** capacities, int** prop, int m, int n){
 	}
 }
 
-bool existSolution() {
-	return s.okay(); // renvoie true si y'a une solution, false sinon
-}
-
+/**
+ * Crée les propositions.
+ * Explication : nous avons fait en sorte que prop ait un "bord" non visible en plus
+ * par rapport à capacities. Ainsi, nous devons pas vérifier que HAUT, BAS, GAUCHE,
+ * DROITE soient des cases existantes (exemple si i=0, j=0, alors HAUT: i=-1, j=0,
+ * causerait une erreur).
+ * @param  m: capacities height
+ * @param  n: capacities width
+ */
 int** newPropositions(int m, int n) {
-	// reset la solution (prop)
 	int** prop = new int*[m+2];
 	for (int i = 0; i < m+2; ++i) {
 		prop[i] = new int[n+2];
 		for (int j = 0; j < n+2; ++j) {
-			prop[i][j] = 0;
 			prop[i][j] = s.newVar();
 			// std::cout << prop[i][j] << ",";
 		}
 	}
-	std::cout << std::endl;
 	return prop;
 }
 
-
+/**
+ * Fonction interdisant qu'une solution soit à nouveau proposée par Minisat
+ * afin d'avoir plusieurs (si possible) solutions uniques.
+ * Explication : pour avoir des solutions différentes, il suffit d'ajouter
+ * une clause où on demande qu'au moins une des ampoules soit pas à la même
+ * position que dans les autres solutions déjà trouvées.
+ * @param  prop: matrix of prop
+ * @param  m: capacities height
+ * @param  n: capacities width
+ */
 void forbidSolution(int** prop, int m, int n) {
-	// contraint la solution pour ne plus l'avoir par après
+	vec<Lit> vector;
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
 			if (s.model[prop[i+1][j+1]] == l_True) { // ampoule
-				s.addUnit(~Lit(prop[i+1][j+1]));
+				vector.push(~Lit(prop[i+1][j+1]));
 			}
 		}
 	}
+	s.addClause(vector);
 }
 
- 
 /**
  * Solves the given light-up instance.
  * @param capacities: instance capacities to solve, an `m` by `n` matrix.
@@ -445,30 +540,30 @@ void forbidSolution(int** prop, int m, int n) {
  * @param find_all: if true, find all valid solutions
  */  
 void solve(int** capacities, int m, int n, bool find_all) {
+    // ============================= SETUP ================================
 	pretty_print(capacities, m, n);
-	// std::cout << std::endl;	
 
 	int** prop = newPropositions(m, n);
-
 	setupConstraints(capacities, prop, m, n); // Contraintes
 
 	// ============================ SOLVE ==================================
-	// s.solve();
-	// showResult(capacities, prop, m, n);
+    int nbSolutions = 0;
 
 	while (true) {
 		s.solve();
-		if (!existSolution()) { // si plus de solution
-			std::cout << "y'a plus de solution\n";
-			break;
-		}
+		if (!s.okay()) break;
+
+		nbSolutions++;
 
 		showResult(capacities, prop, m, n);
+
 		forbidSolution(prop, m, n); // contraint la solution pour ne plus l'avoir apres
-		// prop = newPropositions(m, n);
-		s.model.clear();
-		if (not find_all) {break;} // Si on veut qu'une solution
+		s.model.clear(); //clear pour le re-remplir de nouvelles solutions.
+
+		if (not find_all) break; // Si on veut qu'une solution
 	}
+
+	std::cout << nbSolutions << " solution(s) trouvée(s) !" << std::endl;
 }
 
 /**
@@ -522,8 +617,6 @@ int main(int argc, char** argv) {
 	} else {
 		// read instance on standard input
 		std::cin >> m >> n;
-		M = m;
-		N = n;
 		int** capacities = new int*[m];
 		for (int i = 0; i < m; ++i) {
 			capacities[i] = new int[n];
