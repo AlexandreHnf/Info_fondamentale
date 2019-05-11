@@ -147,24 +147,50 @@ void constraintOneZero(int** prop, int i, int j) {
 	addUnit(~Lit(GAUCHE));
 }
 
+std::vector<int> voisins(int i, int j) {
+	std::vector<int> res = {i-1, i+1, i, i, j, j, j-1, j+1}; // i puis j correspondants
+	return res;
+}
+
 void constraintOneOne(int** prop, int i, int j) {
     // (H && ~B && ~G && ~D) || (~H && B && ~G && ~D) || (~H && ~B && G && ~D) || (~H && ~B && ~G && D)
 	//                                  est équivalent à
 	// (¬B ∨ ¬D) ∧ (¬B ∨ ¬G) ∧ (¬B ∨ ¬H) ∧ (B ∨ D ∨ G ∨ H) ∧ (¬D ∨ ¬G) ∧ (¬D ∨ ¬H) ∧ (¬G ∨ ¬H)
 
-	 addBinary(~Lit(BAS), ~Lit(DROITE)); // (-B v -D)
-	 addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
-	 addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
-	 addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
-	 addBinary(~Lit(DROITE), ~Lit(HAUT)); // (-D v -H)
-	 addBinary(~Lit(GAUCHE), ~Lit(HAUT)); // (-G v -H)
+	// addBinary(~Lit(BAS), ~Lit(DROITE)); // (-B v -D)
+	// addBinary(~Lit(BAS), ~Lit(GAUCHE)); // (-B v -G)
+	// addBinary(~Lit(BAS), ~Lit(HAUT)); // (-B v -H)
+	// addBinary(~Lit(DROITE), ~Lit(GAUCHE)); // (-D v -G)
+	// addBinary(~Lit(DROITE), ~Lit(HAUT)); // (-D v -H)
+	// addBinary(~Lit(GAUCHE), ~Lit(HAUT)); // (-G v -H)
 
-	 vec<Lit> lits;
-	 lits.push(Lit(BAS));
-	 lits.push(Lit(DROITE));
-	 lits.push(Lit(GAUCHE));
-	 lits.push(Lit(HAUT));
-	 addClause(lits); // (B v D v G v H)
+	// vec<Lit> lits;
+	// lits.push(Lit(BAS));
+	// lits.push(Lit(DROITE));
+	// lits.push(Lit(GAUCHE));
+	// lits.push(Lit(HAUT));
+	// addClause(lits); // (B v D v G v H)
+	
+
+	// VERSION GENERIQUE
+
+	std::vector<int> v = voisins(i,j); // voisins dans prop, de i et j
+							// [0, 1, 2, 3,    4, 5, 6, 7]
+
+	// // Au plus une ampoule autour
+	// FOR(k, 0, 3) {
+	// 	FOR(l, 0, 3) { // v[k+4] = le j correspondant au k (i)
+	// 		s.addBinary(~Lit(prop[ v[k] ][ v[k+4] ]), ~Lit(prop[ v[l] ][ v[l+4] ]));
+	// 	}
+	// }
+
+	// Au moins une ampoule autour
+	vec<Lit> lits;
+	FOR(l, 0, 3) {
+		lits.push(Lit(prop[ v[l] ][ v[l+4] ]));
+	}
+	s.addClause(lits); // H v B v G v D			
+
 }
 
 void constraintOneTwo(int** prop, int i, int j) {
@@ -391,15 +417,10 @@ int** newPropositions(int m, int n) {
 		for (int j = 0; j < n+2; ++j) {
 			prop[i][j] = 0;
 			prop[i][j] = s.newVar();
-			std::cout << prop[i][j] << ",";
+			// std::cout << prop[i][j] << ",";
 		}
 	}
 	std::cout << std::endl;
-	// FOR(i, 0, m) {
-	// 	FOR(j, 0, n) {
-	// 		prop[i][j] = s.newVar();
-	// 	}
-	// }
 	return prop;
 }
 
