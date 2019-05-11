@@ -146,11 +146,6 @@ std::vector<int> voisins(int i, int j) {
  * @param  j: index column j
  */
 void constraintOneZero(int** prop, int i, int j) {
-    // (~H && ~B && ~G && ~D)
-	// s.addUnit(~Lit(BAS));
-	// s.addUnit(~Lit(HAUT));
-	// s.addUnit(~Lit(DROITE));
-	// s.addUnit(~Lit(GAUCHE));
 
 	std::vector<int> v = voisins(i,j);
 
@@ -439,6 +434,15 @@ void setupConstraints(int** capacities, int** prop, int m, int n) {
 // ==================== et gérer l'affichage des solutions. ======================
 // ===============================================================================
 
+void showLightPositions(int** capacities, int** prop, int m, int n) {
+	FOR(i, 0, m-1) {
+		FOR(j, 0, n-1) {
+			if (s.model[prop[i+1][j+1]] == l_True) {
+				std::cout << i+1 << " " << j+1 << std::endl;
+			}
+		}
+	}
+}
 /**
  * Fonction affichant le résultat du solve de Minisat.
  * @param  capacities: matrix of capacities
@@ -531,6 +535,8 @@ void solve(int** capacities, int m, int n, bool find_all) {
     // ============================= SETUP ================================
 	pretty_print(capacities, m, n);
 
+	s.verbosity = 0; // n'affiche pas le résultat de SAT (le tableau avec les stats)
+
 	int** prop = newPropositions(m, n);
 	setupConstraints(capacities, prop, m, n); // Contraintes
 
@@ -543,6 +549,7 @@ void solve(int** capacities, int m, int n, bool find_all) {
 
 		nbSolutions++;
 
+		showLightPositions(capacities, prop, m, n);
 		showResult(capacities, prop, m, n);
 
 		forbidSolution(prop, m, n); // contraint la solution pour ne plus l'avoir apres
