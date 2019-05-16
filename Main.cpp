@@ -171,7 +171,7 @@ void constraintOneOne(int** prop, int i, int j) {
 	std::vector<int> v = voisins(i,j); // voisins dans prop, de i et j
 							// [0, 1, 2, 3,    4, 5, 6, 7]
 
-	// Au plus une ampoule autour
+	// Au plus une ampoule autour (formule (2))
 	FOR(k, 0, 3) {
 		FOR(l, 0, 3) { // v[k+4] = le j correspondant au k (i)
 			if (l == k) {continue;}
@@ -180,7 +180,7 @@ void constraintOneOne(int** prop, int i, int j) {
 		}
 	}
 
-	// Au moins une ampoule autour
+	// Au moins une ampoule autour  (formule (3))
 	vec<Lit> lits;
 	FOR(l, 0, 3) {
 		lits.push(Lit(prop[ v[l] ][ v[l+4] ]));
@@ -407,7 +407,6 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 /**
  * Contrainte supplémentaire non présente dans le rapport, car elle est basée sur
  * notre implémentation du code.
- * Se réfère à la formule (11) du rapport
  * Explication : nous avons fait en sorte que prop ait un "bord" non visible en plus
  * par rapport à capacities. Ainsi, nous devons pas vérifier que HAUT, BAS, GAUCHE,
  * DROITE soient des cases existantes (exemple si i=0, j=0, alors HAUT: i=-1, j=0,
@@ -528,6 +527,7 @@ int** newPropositions(int m, int n) {
 /**
  * Fonction interdisant qu'une solution soit à nouveau proposée par Minisat
  * afin d'avoir plusieurs (si possible) solutions uniques.
+ * Se réfère à la formule (11) du rapport
  * Explication : pour avoir des solutions différentes, il suffit d'ajouter
  * une clause où on demande qu'au moins une des ampoules soit pas à la même
  * position que dans les autres solutions déjà trouvées.
