@@ -451,11 +451,7 @@ void showLightPositions(int** capacities, int** prop, int m, int n) {
  * @param  n: capacities width
  */
 void showResult(int** capacities, int** prop, int m, int n){
-	if (!s.okay()) {
-		std::cout << "Il n'y a pas de solution." << std::endl;
-	}
-	else {
-		std::cout << "La formule est satisfaisable." << std::endl;
+	if (s.okay()) {
 		FOR(i, 0, m-1) {
 			FOR(j, 0, n-1) {
 				if (s.model[prop[i+1][j+1]] == l_True) {
@@ -478,6 +474,7 @@ void showResult(int** capacities, int** prop, int m, int n){
 			}
 			std::cout << "\n";
 		}
+		std::cout << "\n";
 	}
 }
 
@@ -496,7 +493,6 @@ int** newPropositions(int m, int n) {
 		prop[i] = new int[n+2];
 		for (int j = 0; j < n+2; ++j) {
 			prop[i][j] = s.newVar();
-			// std::cout << prop[i][j] << ",";
 		}
 	}
 	return prop;
@@ -533,7 +529,6 @@ void forbidSolution(int** prop, int m, int n) {
  */  
 void solve(int** capacities, int m, int n, bool find_all) {
     // ============================= SETUP ================================
-	pretty_print(capacities, m, n);
 
 	s.verbosity = 0; // n'affiche pas le résultat de SAT (le tableau avec les stats)
 
@@ -557,8 +552,6 @@ void solve(int** capacities, int m, int n, bool find_all) {
 
 		if (not find_all) break; // Si on veut qu'une solution
 	}
-
-	std::cout << nbSolutions << " solution(s) trouvée(s) !" << std::endl;
 }
 
 /**
