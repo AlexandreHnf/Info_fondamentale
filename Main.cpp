@@ -65,7 +65,8 @@ bool isWall(int** capacities, int i, int j){
 
 
 /**
- * Cherche l'intervalle dans lequel se trouve une case (horizontalement)
+ * Cherche l'intervalle dans lequel se trouve une case (horizontalement).
+ * Noté I^H dans le rapport.
  * Exemple :  M V V C V M (M=Mur, V=Vide, C=Case actuelle) va retourner
  * un vecteur avec [1, 2, 3, 4] car nous avons un mur en 0 et en 5.
  * @param  capacities: matrix of capacities
@@ -97,7 +98,8 @@ std::vector<int> getHorizontalInterval(int **capacities, int i, int j, int m, in
 }
 
 /**
- * Cherche l'intervalle dans lequel se trouve une case (verticalement)
+ * Cherche l'intervalle dans lequel se trouve une case (verticalement).
+ * Noté I^V dans le rapport.
  * Exemple :  M V V C V M (M=Mur, V=Vide, C=Case actuelle) va retourner
  * un vecteur avec [1, 2, 3, 4] car nous avons un mur en 0 et en 5.
  * @param  capacities: matrix of capacities
@@ -129,7 +131,8 @@ std::vector<int> getVerticalInterval(int **capacities, int i, int j, int m, int 
 }
 
 std::vector<int> voisins(int i, int j) {
-	// renvoie une liste avec les positions des 4 cases voisines de la case (i,j)
+	// renvoie une liste avec les positions des 4 cases voisines de la case (i,j).
+	// Noté "Voisins" dans le rapport.
 	std::vector<int> res = {i-1, i+1, i, i, j, j, j-1, j+1}; // i puis j correspondants
 	return res;
 }
@@ -141,6 +144,7 @@ std::vector<int> voisins(int i, int j) {
 
 /**
  * Contrainte 1.0 : 0 ampoule autour
+ * Se réfère à la formule (1) du rapport
  * @param  prop: matrix of prop
  * @param  i: index line i
  * @param  j: index column j
@@ -150,12 +154,14 @@ void constraintOneZero(int** prop, int i, int j) {
 	std::vector<int> v = voisins(i,j);
 
 	FOR(l, 0, 3) {
+		// Se réfère à la formule (1) du rapport
 		s.addUnit(~Lit(prop[ v[l] ][ v[l+4] ])); // Aucune des case autour n'a d'ampoule
 	}
 }
 
 /**
  * Contrainte 1.1 : 1 ampoule autour
+ * Se réfère à la formule (4) du rapport
  * @param  prop: matrix of prop
  * @param  i: index line i
  * @param  j: index column j
@@ -169,6 +175,7 @@ void constraintOneOne(int** prop, int i, int j) {
 	FOR(k, 0, 3) {
 		FOR(l, 0, 3) { // v[k+4] = le j correspondant au k (i)
 			if (l == k) {continue;}
+			// Se réfère à la formule (2) du rapport
 			s.addBinary(~Lit(prop[ v[k] ][ v[k+4] ]), ~Lit(prop[ v[l] ][ v[l+4] ]));
 		}
 	}
@@ -178,12 +185,14 @@ void constraintOneOne(int** prop, int i, int j) {
 	FOR(l, 0, 3) {
 		lits.push(Lit(prop[ v[l] ][ v[l+4] ]));
 	}
+	// Se réfère à la formule (3) du rapport
 	s.addClause(lits); // H v B v G v D			
 
 }
 
 /**
- * Contrainte 1.2 : 2 ampoules autour
+ * Contrainte 1.2 : 2 ampoules autour.
+ * Se réfère aux formule (12) et (13) du rapport
  * @param  prop: matrix of prop
  * @param  i: index line i
  * @param  j: index column j
@@ -191,10 +200,11 @@ void constraintOneOne(int** prop, int i, int j) {
 void constraintOneTwo(int** prop, int i, int j) {
 	// (H ∧ B ∧ ¬G ∧ ¬D) ∨ (¬H ∧ ¬B ∧ G ∧ D) ∨ (H ∧ ¬B ∧ ¬G ∧ D) ∨ (¬H ∧ B ∧ ¬G ∧ D) ∨
 	//  (¬H ∧ B ∧ G ∧ ¬D) ∨ (H ∧ ¬B ∧ G ∧ ¬D)
-	// equivalent à ci dessous en FNC
+	// equivalent à ci dessous en FNC (formule (13) du rapport)
 	// (¬B ∨ ¬D ∨ ¬G) ∧ (¬B ∨ ¬D ∨ ¬H) ∧ (¬B ∨ ¬G ∨ ¬H) ∧ (B ∨ D ∨ G) ∧ (B ∨ D ∨ H) ∧ 
 	// (B ∨ G ∨ H) ∧ (¬D ∨ ¬G ∨ ¬H) ∧ (D ∨ G ∨ H)
 
+	// Se réfère à la formule (13) du rapport
 	s.addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(GAUCHE)); // (¬B ∨ ¬D ∨ ¬G)
 	s.addTernary(~Lit(BAS), ~Lit(DROITE), ~Lit(HAUT)); // (¬B ∨ ¬D ∨ ¬H)
 	s.addTernary(~Lit(BAS), ~Lit(GAUCHE), ~Lit(HAUT)); // (¬B ∨ ¬G ∨ ¬H)
@@ -207,16 +217,18 @@ void constraintOneTwo(int** prop, int i, int j) {
 }
 
 /**
- * Contrainte 1.3 : 3 ampoules autour
+ * Contrainte 1.3 : 3 ampoules autour.
+ * Se réfère aux formule (14) et (15) du rapport
  * @param  prop: matrix of prop
  * @param  i: index line i
  * @param  j: index column j
  */
 void constraintOneThree(int** prop, int i, int j) {
 	// (H ∧ B ∧ ¬G ∧ D) ∨ (¬H ∧ B ∧ G ∧ D) ∨ (H ∧ B ∧ G ∧ ¬D) ∨ (H ∧ ¬B ∧ G ∧ D)
-	// equivalent à ci dessous en FNC
+	// equivalent à ci dessous en FNC (formule (15) du rapport)
 	//(¬B ∨ ¬D ∨ ¬G ∨ ¬H) ∧ (B ∨ D) ∧ (B ∨ G) ∧ (B ∨ H) ∧ (D ∨ G) ∧ (D ∨ H) ∧ (G ∨ H)
 
+	// Se réfère à la formule (15) du rapport
 	s.addBinary(Lit(BAS), Lit(DROITE)); // (B v D)
 	s.addBinary(Lit(BAS), Lit(GAUCHE)); // (B v G)
 	s.addBinary(Lit(BAS), Lit(HAUT)); // (B v H)
@@ -233,13 +245,16 @@ void constraintOneThree(int** prop, int i, int j) {
 }
 
 /**
- * Contrainte 1.4 : 4 ampoules autour
+ * Contrainte 1.4 : 4 ampoules autour.
+ * Se réfère à la formule (16) du rapport
  * @param  prop: matrix of prop
  * @param  i: index line i
  * @param  j: index column j
  */
 void constraintOneFour(int** prop, int i, int j) {
 	// (H ∧ B ∧ ¬G ∧ D)
+
+	// Se réfère à la formule (16) du rapport
 	s.addUnit(Lit(BAS));
 	s.addUnit(Lit(HAUT));
 	s.addUnit(Lit(DROITE));
@@ -247,7 +262,8 @@ void constraintOneFour(int** prop, int i, int j) {
 }
 
 /**
- * Contrainte 1 : avoir x ampoules autour
+ * Contrainte 1 : avoir x ampoules autour.
+ * Se réfère aux formule (1), (2), (3), (4), (12), (13), (14), (15), (16) du rapport
  * @param  capacities: matrix of capacities
  * @param  prop: matrix of prop
  * @param  m: capacities height
@@ -273,7 +289,8 @@ void constraintOne(int** capacities, int** prop, int m, int n) {
 // ================================================================================
 
 /**
- * Contrainte 2 : pas d'ampoule sur un mur.
+ * Contrainte 2 : pas d'ampoule sur un mur..
+ * Se réfère à la formule (5) du rapport
  * @param  capacities: matrix of capacities
  * @param  prop: matrix of prop
  * @param  m: capacities height
@@ -283,6 +300,7 @@ void constraintTwo(int** capacities, int** prop, int m, int n) {
 	FOR(i, 0, m-1) {
 		FOR(j, 0, n-1) {
 			if (isWall(capacities, i,j)) {
+				// Se réfère à la formule (5) du rapport
 				s.addUnit(~Lit(prop[i+1][j+1]));
 			}
 		}
@@ -295,7 +313,8 @@ void constraintTwo(int** capacities, int** prop, int m, int n) {
 // ================================================================================
 
 /**
- * Contrainte 3 : 2 ampoules ne peuvent s'éclairer
+ * Contrainte 3 : 2 ampoules ne peuvent s'éclairer.
+ * Se réfère aux formule (6) et (7) et (8) du rapport
  * Explication : pour chaque case, on va regarder dans quel intervalle horizontal
  * et vertical où elle se trouve. Dans cet intervalle, on va faire en sorte qu'on
  * ait pas deux ampoules. Pour cela, nous prenons chaque paire possible de deux
@@ -309,20 +328,24 @@ void constraintTwo(int** capacities, int** prop, int m, int n) {
 void constraintThree(int **capacities, int **prop, int m, int n) {
     FOR(i, 0, m-1){
         FOR(j, 0, n-1) {
+			// Lignes
             std::vector<int> hor = getHorizontalInterval(capacities, i, j, m, n);
             if ((int) hor.size() > 1) { //si qu'une case, elle n'aura pas d'ampoule en face
                 FOR(k, 0, (int) hor.size() - 1) {
                     FOR(l, 0, (int) hor.size() - 1) {
                         if (k == l) continue;
+						// Se réfère à la formule (6) du rapport
                         s.addBinary(~Lit(prop[i + 1][hor[k] + 1]), ~Lit(prop[i + 1][hor[l] + 1]));
                     }
                 }
             }
+			// Colonnes 
             std::vector<int> vert = getVerticalInterval(capacities, i, j, m, n);
             if ((int) vert.size() > 1) { //si qu'une case, elle n'aura pas d'ampoule en face
                 FOR(k, 0, (int) vert.size() - 1) {
                     FOR(l, 0, (int) vert.size() - 1) {
                         if (k == l) continue;
+						// Se réfère à la formule (7) du rapport
                         s.addBinary(~Lit(prop[vert[k] + 1][j + 1]), ~Lit(prop[vert[l] + 1][j + 1]));
                     }
                 }
@@ -338,7 +361,8 @@ void constraintThree(int **capacities, int **prop, int m, int n) {
 // ================================================================================
 
 /**
- * Contrainte 4 : toutes les cases doivent être éclairées
+ * Contrainte 4 : toutes les cases doivent être éclairées.
+ * Se réfère à la formule (9) du rapport
  * Explication : pour chaque case, on va regarder dans quel intervalle horizontal
  * et vertical où elle se trouve. On va ajouter toutes ces cases présentes dans
  * les intervalles dans une clause (donc 'OU') et l'ajouter au solveur. Ainsi, on
@@ -383,6 +407,7 @@ void constraintFour(int** capacities, int** prop, int m, int n) {
 /**
  * Contrainte supplémentaire non présente dans le rapport, car elle est basée sur
  * notre implémentation du code.
+ * Se réfère à la formule (11) du rapport
  * Explication : nous avons fait en sorte que prop ait un "bord" non visible en plus
  * par rapport à capacities. Ainsi, nous devons pas vérifier que HAUT, BAS, GAUCHE,
  * DROITE soient des cases existantes (exemple si i=0, j=0, alors HAUT: i=-1, j=0,
@@ -398,6 +423,7 @@ void constraintSupp(int** capacities, int** prop, int m, int n){
     FOR(i, 0, m+1){
         FOR(j, 0, n+1){
             if (i == 0 or j == 0 or i == m+1 or j == n+1){
+				// Se réfère à la formule (10) du rapport
                 s.addUnit(~Lit(prop[i][j]));
             }
         }
@@ -410,6 +436,7 @@ void constraintSupp(int** capacities, int** prop, int m, int n){
 
 /**
  * Fonction appellant toutes les contraintes.
+ * Se réfère à la formule (10) du rapport
  * @param  capacities: matrix of capacities
  * @param  prop: matrix of prop
  * @param  m: capacities height
